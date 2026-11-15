@@ -23,6 +23,8 @@ Aktualizováno: 15. listopadu 2026. Aktuální vývojová větev: `vyvoj/editor-
 
 - [x] Záložka „Lety“ (`flights.js`, odkaz `#lety`): přehled jen letů s hledáním, filtry (osoba, rok, stav), barevným označením a úpravou přímo v řádku (letiště ze seznamu, datum, osoby, ověření, smazání). V `?demo` běží nad smyšlenými lety.
 
+- [x] Přehrávání časové osy zpomalí v měsíci s letem: let trvá 3 s (při 2× a 4× úměrně kratší), několik letů v měsíci letí postupně a po posledním se 1 s počká.
+
 ## Zbývá před nasazením
 - [ ] Otestovat živý režim ve skutečném přihlášeném prohlížeči a RLS zápisy.
 - [ ] Ověřit ukazatel bez znalosti koordinát (zvýrazněná země je funkční; letové trasy jen pro doložené body).
