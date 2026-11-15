@@ -21,6 +21,8 @@ Aktualizováno: 15. listopadu 2026. Aktuální vývojová větev: `vyvoj/editor-
 
 - [x] Editor úseků nabízí v „Odkud / Kam“ hotová letiště s polohou (`airports.js`), takže trasa a letadélko jdou zadat bez opisování souřadnic.
 
+- [x] Záložka „Lety“ (`flights.js`, odkaz `#lety`): přehled jen letů s hledáním, filtry (osoba, rok, stav), barevným označením a úpravou přímo v řádku (letiště ze seznamu, datum, osoby, ověření, smazání). V `?demo` běží nad smyšlenými lety.
+
 ## Zbývá před nasazením
 - [ ] Otestovat živý režim ve skutečném přihlášeném prohlížeči a RLS zápisy.
 - [ ] Ověřit ukazatel bez znalosti koordinát (zvýrazněná země je funkční; letové trasy jen pro doložené body).
