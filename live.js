@@ -82,11 +82,33 @@ function timeline(trips,stops,people){
  render();
 }
 async function refresh(){
- const [persons,trips,stops,stopPeople,participants]=await Promise.all([
-  table('travel_people'),table('travel_trips'),table('travel_stops'),table('travel_stop_people'),table('travel_trip_people')
+ const [persons,trips,stops,stopPeople,participants,legs,locations,legPeople]=await Promise.all([
+  table('travel_people'),table('travel_trips'),table('travel_stops'),
+  table('travel_stop_people'),table('travel_trip_people'),
+  table('travel_legs'),table('travel_locations'),table('travel_leg_people')
  ]);
  travel.people=persons;travel.trips=trips;travel.attendance=participants;
+ // Animované oblouky pouze pro potvrzené skutečné lety s ověřenými body a cestujícími.
+ // Bez údajů o poloze nesmí aplikace vykreslit domnělou trasu.
+ const completed=new Set(trips.filter(t=>t.status==='completed').map(t=>t.id));
+ const places=new Map(locations.map(p=>[p.id,p]));
+ const travelerIds=new Map();
+ for(const p of legPeople.filter(p=>p.presence==='confirmed')){
+   const ids=travelerIds.get(p.leg_id)||[];
+   ids.push(p.person_id);travelerIds.set(p.leg_id,ids);
+ }
+ window.RodinneCestyLiveLegs=legs.filter(l=>
+   l.mode==='flight' && l.verification==='verified' && completed.has(l.trip_id) && l.departure_date
+ ).map(l=>{
+   const from=places.get(l.from_location_id),to=places.get(l.to_location_id);
+   if(!from||!to||from.latitude==null||from.longitude==null||to.latitude==null||to.longitude==null)return null;
+   const people=travelerIds.get(l.id)||[];
+   if(!people.length)return null;
+   return {date:l.departure_date,from:[from.longitude,from.latitude],to:[to.longitude,to.latitude],
+     people,label:from.name+' → '+to.name+(l.flight_number?' · '+l.flight_number:'')};
+ }).filter(Boolean);
  peopleOptions();plans();timeline(trips,stops,stopPeople);
+ if(window.RodinneCestyEditor)await window.RodinneCestyEditor.sync(travel);
 }
 async function saveVisit(event){
  event.preventDefault();
@@ -158,7 +180,9 @@ async function initLive(){
   byId('asia-btn').addEventListener('click',()=>setView(true));
   byId('world-btn').addEventListener('click',()=>setView(false));
   document.querySelectorAll('#countries [data-iso2]').forEach(el=>el.addEventListener('click',()=>showCountry(el.dataset.iso2)));
-  await refresh();message('Databáze je připravena. Přidej první ověřenou návštěvu nebo načti plány.');
+  await refresh();
+  if(window.RodinneCestyEditor)window.RodinneCestyEditor.mount(travel.db,refresh,travel);
+  message('Databáze je připravena. Přidej první ověřenou návštěvu nebo načti plány.');
  }catch(e){report(e);}
 }
 if(!(new URLSearchParams(location.search).has('demo')||location.protocol==='file:'))initLive();
