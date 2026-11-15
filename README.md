@@ -7,7 +7,7 @@ Interaktivní rodinná kronika cest: mapa světa, přehrávání po měsících,
 - **Rodinná databáze:** bez `?demo` – sdílené přihlášení přes Rozcestník; data pocházejí z chráněného Supabase.
 
 ## Stav
-První verze připravená ke sloučení do `main`. Samotné zveřejnění na GitHub Pages závisí na konfiguraci repozitáře. Živý přihlášený režim ještě vyžaduje koncové testování.
+Základní verze je v `main` a publikuje se přes GitHub Pages. V pracovní větvi `vyvoj/editor-cest-a-tras` vzniká další funkce: editor cest a přesunů. Editor zatím **není v nasazeném webu**; živý režim vyžaduje koncové testování.
 
 ## Nově funkční část
 - 10 databázových tabulek `travel_*` ve stejném Supabase projektu jako Plánovač.
@@ -27,3 +27,12 @@ Repozitář je veřejný. Skutečná data cest, fotografie pasů a přístupové
 - `docs/PROJECT.md` – specifikace.
 
 Přímé lokální otevření `index.html` automaticky používá demo, protože živé přihlášení funguje jen v rámci stejného originu GitHub Pages jako Rozcestník.
+
+## Ruční opravy a doplňování (pracovní větev)
+
+- Po přihlášení lze v novém editoru upravit název, data, typ a stav cesty.
+- Lze založit novou cestu a zapsat zastávky, přesuny letadlem, autem, vlakem, autobusem nebo lodí, účastníky i poznámky.
+- Každá zastávka a každý přesun má stav `k ověření` / `ověřeno` / `zamítnuto`. Neznámé datum či letiště není nutné domýšlet.
+- Ne všechny příchody do zemí mají razítka a ne každé razítko dokazuje let. Proto je třeba oba druhy záznamů oddělit.
+- Pouze potvrzený pobyt v dokončené cestě s konkrétním datem a účastníkem odemyká zemi na mapě.
+- Editor provádí několik Supabase zápisů za sebou; potvrzení celé transakce, souběžné úpravy a test v přihlášeném prohlížeči ještě zbývají. Doporučená první fáze provozu je opatrná beta s revizí před každým větším importem.
