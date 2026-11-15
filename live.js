@@ -87,6 +87,7 @@ async function refresh(){
  ]);
  travel.people=persons;travel.trips=trips;travel.attendance=participants;
  peopleOptions();plans();timeline(trips,stops,stopPeople);
+ if(window.RodinneCestyEditor)await window.RodinneCestyEditor.sync(travel);
 }
 async function saveVisit(event){
  event.preventDefault();
@@ -158,7 +159,9 @@ async function initLive(){
   byId('asia-btn').addEventListener('click',()=>setView(true));
   byId('world-btn').addEventListener('click',()=>setView(false));
   document.querySelectorAll('#countries [data-iso2]').forEach(el=>el.addEventListener('click',()=>showCountry(el.dataset.iso2)));
-  await refresh();message('Databáze je připravena. Přidej první ověřenou návštěvu nebo načti plány.');
+  await refresh();
+  if(window.RodinneCestyEditor)window.RodinneCestyEditor.mount(travel.db,refresh,travel);
+  message('Databáze je připravena. Přidej první ověřenou návštěvu nebo načti plány.');
  }catch(e){report(e);}
 }
 if(!(new URLSearchParams(location.search).has('demo')||location.protocol==='file:'))initLive();
