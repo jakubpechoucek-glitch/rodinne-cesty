@@ -73,6 +73,12 @@
       const select=f.elements.namedItem(end+'Id');select.replaceChildren(new Option('Místo neznámé',''),new Option('+ Přidat nové místo','__new'));
       for(const place of S.locations.slice().sort((a,b)=>a.name.localeCompare(b.name,'cs')))
         select.add(new Option(place.name+' ('+place.country_iso2+')',place.id));
+      if(typeof AIRPORTS!=='undefined'){
+        const group=document.createElement('optgroup');group.label='Letiště (hotový seznam s polohou)';
+        for(const a of AIRPORTS.slice().sort((x,y)=>x.name.localeCompare(y.name,'cs')))
+          if(!S.locations.some(p=>p.iata_code===a.iata))group.append(new Option(a.name+' ('+a.iata+')','ap:'+a.iata));
+        if(group.children.length)select.append(group);
+      }
       const chosen=row?.[end+'_location_id']||'';
       select.value=S.locations.some(x=>x.id===chosen)?chosen:'';
       f.querySelector('[data-new-place="'+end+'"]').hidden=select.value!=='__new';
@@ -151,7 +157,14 @@
     finally{enabled(true);}
   }
   async function resolvePlace(f,end) {
-    const choice=val(f,end+'Id');if(choice!=='__new')return choice||null;
+    const choice=val(f,end+'Id');
+    if(choice.startsWith('ap:')){
+      const a=(typeof AIRPORTS!=='undefined'?AIRPORTS:[]).find(x=>x.iata===choice.slice(3));
+      if(!a)throw new Error('Neznámé letiště '+choice.slice(3)+'.');
+      const known=S.locations.find(p=>p.iata_code===a.iata);if(known)return known.id;
+      return check(await S.db.from('travel_locations').insert({name:a.name,country_iso2:a.country,iata_code:a.iata,latitude:a.lat,longitude:a.lon}).select('id').single()).id;
+    }
+    if(choice!=='__new')return choice||null;
     const name=val(f,end+'Name'),country=val(f,end+'Country');
     if(!name||!country)throw new Error('U nového místa vyplň název a zemi ('+end+').');
     const la=val(f,end+'Lat'),lo=val(f,end+'Lon');

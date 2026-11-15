@@ -19,6 +19,8 @@ Aktualizováno: 15. listopadu 2026. Aktuální vývojová větev: `vyvoj/editor-
 - [x] Letadélko letí po trase při každém měsíci s letem (demo i živý režim).
 - [x] Formulář návštěvy má nepovinné „Odlet z / Přílet do“ (číselník letišť `airports.js`); ukládá se do `travel_locations` a `travel_legs`, živá mapa kreslí jen ověřené lety.
 
+- [x] Editor úseků nabízí v „Odkud / Kam“ hotová letiště s polohou (`airports.js`), takže trasa a letadélko jdou zadat bez opisování souřadnic.
+
 ## Zbývá před nasazením
 - [ ] Otestovat živý režim ve skutečném přihlášeném prohlížeči a RLS zápisy.
 - [ ] Ověřit ukazatel bez znalosti koordinát (zvýrazněná země je funkční; letové trasy jen pro doložené body).
