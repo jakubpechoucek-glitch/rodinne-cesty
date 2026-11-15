@@ -14,11 +14,16 @@
 - [ ] Ověřit zobrazení v desktopovém a mobilním prohlížeči (lokální automatický prohlížeč má blokovanou navigaci)
 
 ## Další kroky
-- [ ] Obnovit GitHub oprávnění pro zápis (aktuálně HTTP 403)
-- [ ] Nahrát projekt do pracovní větve nového repozitáře
+- [x] Ověřen zápis do GitHubu — založen první commit na `main`
+- [x] Demo, README, dokumentace a návrh SQL nahrány do `vyvoj/prvni-demo`
 - [ ] Doplnit skutečné přihlášení přes Rozcestník
 - [ ] Zrevidovat databázové schéma, spustit migraci a ověřit RLS
 - [ ] Připojit skutečná data a editor cest
 - [ ] Napojit jednosměrnou synchronizaci s Plánovačem
 - [ ] Zpracovat pasová razítka mimo veřejný repozitář
 - [ ] Test na mobilu a desktopu, bezpečnostní revize, PR a nasazení na vyžádání
+## GitHub stav (15. 11. 2026)
+- Hlavní větev `main` obsahuje pouze inicializační README.
+- Vývojová větev `vyvoj/prvni-demo` obsahuje první demonstraci a návrh databáze.
+- SQL označené `NAVRH_NESPOUSTET` nebylo spuštěno. Nejsou vytvořena produkční cestovní data.
+- Pull request, merge, změny Rozcestníku a publikování vyžadují zvláštní zadání.
