@@ -22,8 +22,9 @@ Aktualizováno: 15. listopadu 2026. Vývojová větev: `vyvoj/prvni-demo`.
 - [ ] Rozšířit editor o konkrétní lety, koordináty a důkazy; doplnit export/import ověřených záznamů.
 - [ ] Ověřit transakční atomicitu ukládání cest a ošetření paralelních synchronizací.
 - [ ] Provést audit ostatních starších `SECURITY DEFINER` funkcí podle výstupu Supabase Security Advisor — samostatný úkol.
-- [ ] Schválit PR / merge do `main`, zapnout GitHub Pages a změnit dlaždici Rozcestníku z GitHub odkazu na web.
+- [x] Změny připraveny pro schválené sloučení do `main`.
+- [ ] Ověřit/zapnout GitHub Pages, poté změnit dlaždici Rozcestníku z GitHub odkazu na web.
 
 ## Důležité
 - Produkční databázové schéma bylo vytvořeno, ale **skutečné cesty dosud nebyly importovány**; import spouští uživatel až tlačítkem.
-- Žádný kód není mergnutý do `main`, ani se nepublikuje živá aplikace.
+- Kód je připravený k publikování v `main`; nasazení na GitHub Pages a přihlášený test jsou samostatné kroky.
