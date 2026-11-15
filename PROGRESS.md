@@ -20,6 +20,8 @@ Aktualizováno: 15. listopadu 2026. Aktuální vývojová větev: `vyvoj/editor-
 - [ ] Otestovat živý režim ve skutečném přihlášeném prohlížeči a RLS zápisy.
 - [ ] Ověřit ukazatel bez znalosti koordinát (zvýrazněná země je funkční; letové trasy jen pro doložené body).
 - [x] Základní editor uložených cest, zastávek a přesunů (letadlo, auto, vlak, autobus, loď) ve vývojové větvi.
+- [x] Živý režim zobrazuje oblouk jen u potvrzeného letu s datem, oběma souřadnicemi a účastníky.
+- [x] Statická kontrola syntaxe 7 vložených JS bloků a souborů, kontrola pořadí skriptů a výskytu tajných klíčů.
 - [ ] Dopracovat historii důkazů, import pasových razítek, kontrolu změn a export/import ověřených záznamů.
 - [ ] Ověřit transakční atomicitu ukládání cest a ošetření paralelních synchronizací (i nového editoru).
 - [ ] Otestovat editaci/zápisy v přihlášeném prohlížeči na mobilu i desktopu a případné konflikty dat.
