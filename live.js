@@ -72,7 +72,7 @@ function plans(){
   b.addEventListener('click',()=>openVisit(t.id));card.append(title,date,b);root.append(card);
  }
 }
-function timeline(trips,stops,people,locations=[],legs=[]){
+function timeline(trips,stops,people,locations=[]){
  const loc=new Map(locations.map(l=>[l.id,l]));
  const allowed=new Set(trips.filter(x=>x.status==='completed').map(x=>x.id));
  const confirmed=new Map();
@@ -82,10 +82,7 @@ function timeline(trips,stops,people,locations=[],legs=[]){
  const rec=stops.filter(x=>allowed.has(x.trip_id)&&x.kind==='stay'&&x.verification==='verified'&&x.arrival_date)
   .flatMap(s=>{const persons=confirmed.get(s.id)||[];if(!persons.length)return [];
     const trip=trips.find(t=>t.id===s.trip_id);
-    const mine=legs.filter(l=>l.trip_id===s.trip_id&&l.verification==='verified'&&loc.get(l.to_location_id)?.country_iso2===s.country_iso2)
-      .map(l=>({a:loc.get(l.from_location_id),b:loc.get(l.to_location_id)})).filter(l=>l.a&&l.b&&l.a.longitude!=null&&l.b.longitude!=null)
-      .map(l=>({a:[l.a.longitude,l.a.latitude],b:[l.b.longitude,l.b.latitude],label:'Let '+l.a.name+' → '+l.b.name}));
-    return [{id:s.id,date:s.arrival_date,country:s.country_iso2,name:trip.title,people:persons,legs:mine,loc:loc.get(s.location_id)}];
+    return [{id:s.id,date:s.arrival_date,country:s.country_iso2,name:trip.title,people:persons,loc:loc.get(s.location_id)}];
   }).sort((a,b)=>a.date.localeCompare(b.date));
  const geo=new Map([...document.querySelectorAll('#countries [data-iso2]')].map(x=>[x.dataset.iso2,x.dataset.name]));
  for(const r of rec){if(!DEST[r.country])DEST[r.country]={name:geo.get(r.country)||r.country,city:geo.get(r.country)||r.country,p:null};
@@ -101,11 +98,33 @@ function timeline(trips,stops,people,locations=[],legs=[]){
  render();
 }
 async function refresh(){
- const [persons,trips,stops,stopPeople,participants,locations,legs]=await Promise.all([
-  table('travel_people'),table('travel_trips'),table('travel_stops'),table('travel_stop_people'),table('travel_trip_people'),table('travel_locations'),table('travel_legs')
+ const [persons,trips,stops,stopPeople,participants,legs,locations,legPeople]=await Promise.all([
+  table('travel_people'),table('travel_trips'),table('travel_stops'),
+  table('travel_stop_people'),table('travel_trip_people'),
+  table('travel_legs'),table('travel_locations'),table('travel_leg_people')
  ]);
- travel.people=persons;travel.trips=trips;travel.attendance=participants;travel.locations=locations;travel.legs=legs;
- peopleOptions();plans();timeline(trips,stops,stopPeople,locations,legs);
+ travel.people=persons;travel.trips=trips;travel.attendance=participants;
+ // Animované oblouky pouze pro potvrzené skutečné lety s ověřenými body a cestujícími.
+ // Bez údajů o poloze nesmí aplikace vykreslit domnělou trasu.
+ const completed=new Set(trips.filter(t=>t.status==='completed').map(t=>t.id));
+ const places=new Map(locations.map(p=>[p.id,p]));
+ const travelerIds=new Map();
+ for(const p of legPeople.filter(p=>p.presence==='confirmed')){
+   const ids=travelerIds.get(p.leg_id)||[];
+   ids.push(p.person_id);travelerIds.set(p.leg_id,ids);
+ }
+ window.RodinneCestyLiveLegs=legs.filter(l=>
+   l.mode==='flight' && l.verification==='verified' && completed.has(l.trip_id) && l.departure_date
+ ).map(l=>{
+   const from=places.get(l.from_location_id),to=places.get(l.to_location_id);
+   if(!from||!to||from.latitude==null||from.longitude==null||to.latitude==null||to.longitude==null)return null;
+   const people=travelerIds.get(l.id)||[];
+   if(!people.length)return null;
+   return {date:l.departure_date,from:[from.longitude,from.latitude],to:[to.longitude,to.latitude],
+     people,label:from.name+' → '+to.name+(l.flight_number?' · '+l.flight_number:'')};
+ }).filter(Boolean);
+ peopleOptions();plans();timeline(trips,stops,stopPeople);
+ if(window.RodinneCestyEditor)await window.RodinneCestyEditor.sync(travel);
 }
 async function saveVisit(event){
  event.preventDefault();
@@ -186,7 +205,9 @@ async function initLive(){
   byId('asia-btn').addEventListener('click',()=>setView(true));
   byId('world-btn').addEventListener('click',()=>setView(false));
   document.querySelectorAll('#countries [data-iso2]').forEach(el=>el.addEventListener('click',()=>showCountry(el.dataset.iso2)));
-  await refresh();message('Databáze je připravena. Přidej první ověřenou návštěvu nebo načti plány.');
+  await refresh();
+  if(window.RodinneCestyEditor)window.RodinneCestyEditor.mount(travel.db,refresh,travel);
+  message('Databáze je připravena. Přidej první ověřenou návštěvu nebo načti plány.');
  }catch(e){report(e);}
 }
 if(!(new URLSearchParams(location.search).has('demo')||location.protocol==='file:'))initLive();

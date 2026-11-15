@@ -1,6 +1,6 @@
 # Stav projektu Rodinné cesty
 
-Aktualizováno: 15. listopadu 2026. Vývojová větev: `vyvoj/prvni-demo`.
+Aktualizováno: 15. listopadu 2026. Aktuální vývojová větev: `vyvoj/editor-cest-a-tras`.
 
 ## Dokončeno
 - [x] Mapa 177 oblastí, časová osa, filtry osob, animace a režim `?demo` (jen smyšlená data).
@@ -22,12 +22,17 @@ Aktualizováno: 15. listopadu 2026. Vývojová větev: `vyvoj/prvni-demo`.
 ## Zbývá před nasazením
 - [ ] Otestovat živý režim ve skutečném přihlášeném prohlížeči a RLS zápisy.
 - [ ] Ověřit ukazatel bez znalosti koordinát (zvýrazněná země je funkční; letové trasy jen pro doložené body).
-- [ ] Rozšířit editor o důkazy (lety a koordináty přes letiště už jsou); doplnit export/import ověřených záznamů.
-- [ ] Ověřit transakční atomicitu ukládání cest a ošetření paralelních synchronizací.
+- [x] Základní editor uložených cest, zastávek a přesunů (letadlo, auto, vlak, autobus, loď) ve vývojové větvi.
+- [x] Živý režim zobrazuje oblouk jen u potvrzeného letu s datem, oběma souřadnicemi a účastníky.
+- [x] Statická kontrola syntaxe 7 vložených JS bloků a souborů, kontrola pořadí skriptů a výskytu tajných klíčů.
+- [ ] Dopracovat historii důkazů, import pasových razítek, kontrolu změn a export/import ověřených záznamů.
+- [ ] Ověřit transakční atomicitu ukládání cest a ošetření paralelních synchronizací (i nového editoru).
+- [ ] Otestovat editaci/zápisy v přihlášeném prohlížeči na mobilu i desktopu a případné konflikty dat.
 - [ ] Provést audit ostatních starších `SECURITY DEFINER` funkcí podle výstupu Supabase Security Advisor — samostatný úkol.
-- [x] Změny připraveny pro schválené sloučení do `main`.
-- [ ] Ověřit/zapnout GitHub Pages, poté změnit dlaždici Rozcestníku z GitHub odkazu na web.
+- [x] Základní verze byla schválena a sloučena do `main`.
+- [ ] Editor není dosud sloučen do `main` a není veřejně nasazen.
+- [x] GitHub Pages a dlaždice Rozcestníku směrující na web fungují.
 
 ## Důležité
 - Produkční databázové schéma bylo vytvořeno, ale **skutečné cesty dosud nebyly importovány**; import spouští uživatel až tlačítkem.
-- Kód je připravený k publikování v `main`; nasazení na GitHub Pages a přihlášený test jsou samostatné kroky.
+- Základní verze je nasazená. Nový editor se vyvíjí odděleně ve větvi; merge až na výslovný pokyn.
