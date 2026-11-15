@@ -7,7 +7,7 @@ Interaktivní rodinná kronika cest: mapa světa, přehrávání po měsících,
 - **Rodinná databáze:** bez `?demo` – sdílené přihlášení přes Rozcestník; data pocházejí z chráněného Supabase.
 
 ## Stav
-Vyvíjí se ve větvi `vyvoj/prvni-demo`. Zatím není nasazeno na GitHub Pages a nebylo mergnuto do `main`.
+První verze připravená ke sloučení do `main`. Samotné zveřejnění na GitHub Pages závisí na konfiguraci repozitáře. Živý přihlášený režim ještě vyžaduje koncové testování.
 
 ## Nově funkční část
 - 10 databázových tabulek `travel_*` ve stejném Supabase projektu jako Plánovač.
