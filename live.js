@@ -207,6 +207,7 @@ async function initLive(){
   document.querySelectorAll('#countries [data-iso2]').forEach(el=>el.addEventListener('click',()=>showCountry(el.dataset.iso2)));
   await refresh();
   if(window.RodinneCestyEditor)window.RodinneCestyEditor.mount(travel.db,refresh,travel);
+  if(window.RodinneCestyFlights)window.RodinneCestyFlights.mount(travel.db,refresh);
   message('Databáze je připravena. Přidej první ověřenou návštěvu nebo načti plány.');
  }catch(e){report(e);}
 }
