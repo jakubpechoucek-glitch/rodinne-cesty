@@ -125,6 +125,7 @@ async function refresh(){
  }).filter(Boolean);
  peopleOptions();plans();timeline(trips,stops,stopPeople);
  if(window.RodinneCestyEditor)await window.RodinneCestyEditor.sync(travel);
+ if(window.RodinneCestyFlights)await window.RodinneCestyFlights.sync();
 }
 async function saveVisit(event){
  event.preventDefault();
