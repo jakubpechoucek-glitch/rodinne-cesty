@@ -1,29 +1,29 @@
 # Stav projektu Rodinné cesty
 
-## Hotovo
-- [x] Ověření existujícího Rozcestníku, Plánovače a Supabase schématu
-- [x] Projektové zadání a návrh 10 tabulek
-- [x] Lokální demonstrační mapa světa se smyšlenými údaji
-- [x] Filtr osob, společných cest a celé rodiny
-- [x] Měsíční časová osa, přehrávání, zvýrazňování zemí a tras
-- [x] Přehled cest a zemí podle aktuálního filtru
+Aktualizováno: 15. listopadu 2026. Vývojová větev: `vyvoj/prvni-demo`.
 
-## Ověření
-- [x] Kontrola syntaxe JavaScriptu a HTML
-- [x] Test časové osy a osobních filtrů na fiktivních datech
-- [ ] Ověřit zobrazení v desktopovém a mobilním prohlížeči (lokální automatický prohlížeč má blokovanou navigaci)
+## Dokončeno
+- [x] Mapa 177 oblastí, časová osa, filtry osob, animace a režim `?demo` (jen smyšlená data).
+- [x] Sdílené rodinné přihlášení z `/rozcestnik/auth.js` pro živý režim.
+- [x] 10 tabulek `travel_*` vytvořeno v existujícím Supabase projektu migrací `rodinne_cesty_schema_v1`.
+- [x] Všech 10 tabulek má zapnuté RLS a pravidlo pro členy rodiny; `anon` nemá práva.
+- [x] Otestováno: testovací nečlen rodiny nevidí žádné členy v `travel_people`.
+- [x] Základní údaje o čtyřech členech jsou pouze v databázi, nikoli ve veřejném kódu.
+- [x] Živá mapa čte pouze ověřené pobyty skutečně absolvovaných cest; nepodložené oblouky se nekreslí.
+- [x] Formulář pro přidání ověřené návštěvy a potvrzení plánovaného pobytu.
+- [x] Ručně spuštěná jednosměrná synchronizace `plan_cesty` a `plan_volno` s kontrolou duplicit.
+- [x] Aktualizované zdrojové soubory `index.html`, `live.js`.
+- [x] Kontrola syntaxe JS; původní demo otestováno na šířce 1350 a 390 px pomocí Chromium.
+- [x] Kontrola změn: nejsou v nich fotografie pasů, soukromá data cest ani tajné klíče.
 
-## Další kroky
-- [x] Ověřen zápis do GitHubu — založen první commit na `main`
-- [x] Demo, README, dokumentace a návrh SQL nahrány do `vyvoj/prvni-demo`
-- [ ] Doplnit skutečné přihlášení přes Rozcestník
-- [ ] Zrevidovat databázové schéma, spustit migraci a ověřit RLS
-- [ ] Připojit skutečná data a editor cest
-- [ ] Napojit jednosměrnou synchronizaci s Plánovačem
-- [ ] Zpracovat pasová razítka mimo veřejný repozitář
-- [ ] Test na mobilu a desktopu, bezpečnostní revize, PR a nasazení na vyžádání
-## GitHub stav (15. 11. 2026)
-- Hlavní větev `main` obsahuje pouze inicializační README.
-- Vývojová větev `vyvoj/prvni-demo` obsahuje první demonstraci a návrh databáze.
-- SQL označené `NAVRH_NESPOUSTET` nebylo spuštěno. Nejsou vytvořena produkční cestovní data.
-- Pull request, merge, změny Rozcestníku a publikování vyžadují zvláštní zadání.
+## Zbývá před nasazením
+- [ ] Otestovat živý režim ve skutečném přihlášeném prohlížeči a RLS zápisy.
+- [ ] Ověřit ukazatel bez znalosti koordinát (zvýrazněná země je funkční; letové trasy jen pro doložené body).
+- [ ] Rozšířit editor o konkrétní lety, koordináty a důkazy; doplnit export/import ověřených záznamů.
+- [ ] Ověřit transakční atomicitu ukládání cest a ošetření paralelních synchronizací.
+- [ ] Provést audit ostatních starších `SECURITY DEFINER` funkcí podle výstupu Supabase Security Advisor — samostatný úkol.
+- [ ] Schválit PR / merge do `main`, zapnout GitHub Pages a změnit dlaždici Rozcestníku z GitHub odkazu na web.
+
+## Důležité
+- Produkční databázové schéma bylo vytvořeno, ale **skutečné cesty dosud nebyly importovány**; import spouští uživatel až tlačítkem.
+- Žádný kód není mergnutý do `main`, ani se nepublikuje živá aplikace.
