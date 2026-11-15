@@ -1,7 +1,7 @@
 'use strict';
 // Reálný režim: jen databáze chráněná společným přihlášením Rozcestníku.
 // Nikdy nekopírovat osobní cestovní údaje do veřejného repozitáře.
-const travel = {db:null, people:[],trips:[],attendance:[]};
+const travel = {db:null, people:[],trips:[],attendance:[],locations:[],legs:[]};
 const byId=id=>document.getElementById(id);
 const must=(result)=>{if(result.error)throw result.error;return result.data||[]};
 const today=()=>new Date().toLocaleDateString('en-CA');
@@ -15,6 +15,20 @@ function options(){
  const arr=[...document.querySelectorAll('#countries [data-iso2]')].map(x=>({id:x.dataset.iso2,name:x.dataset.name}))
  .filter(x=>/^[A-Z]{2}$/.test(x.id)).sort((a,b)=>a.name.localeCompare(b.name,'cs'));
  arr.forEach(x=>el.add(new Option(x.name+' ('+x.id+')',x.id)));
+}
+function airportOptions(){
+ for(const id of ['visit-from','visit-to']){
+  const el=byId(id);el.replaceChildren(new Option('— neuvedeno —',''));
+  AIRPORTS.slice().sort((a,b)=>a.name.localeCompare(b.name,'cs')).forEach(a=>el.add(new Option(a.name+' ('+a.iata+')',a.iata)));
+ }
+ byId('visit-to').addEventListener('change',e=>{const a=AIRPORTS.find(x=>x.iata===e.target.value);if(a&&!byId('visit-country').value)byId('visit-country').value=a.country;});
+}
+async function locationId(iata){
+ if(!iata)return null;
+ const a=AIRPORTS.find(x=>x.iata===iata);if(!a)return null;
+ const found=must(await travel.db.from('travel_locations').select('id').eq('iata_code',iata));
+ if(found.length)return found[0].id;
+ return must(await travel.db.from('travel_locations').insert({name:a.name,country_iso2:a.country,iata_code:a.iata,latitude:a.lat,longitude:a.lon}).select('id').single()).id;
 }
 function peopleOptions(){
  const el=byId('visit-people');el.replaceChildren();
@@ -58,7 +72,8 @@ function plans(){
   b.addEventListener('click',()=>openVisit(t.id));card.append(title,date,b);root.append(card);
  }
 }
-function timeline(trips,stops,people){
+function timeline(trips,stops,people,locations=[],legs=[]){
+ const loc=new Map(locations.map(l=>[l.id,l]));
  const allowed=new Set(trips.filter(x=>x.status==='completed').map(x=>x.id));
  const confirmed=new Map();
  for(const row of people.filter(x=>x.presence==='confirmed')){
@@ -67,10 +82,14 @@ function timeline(trips,stops,people){
  const rec=stops.filter(x=>allowed.has(x.trip_id)&&x.kind==='stay'&&x.verification==='verified'&&x.arrival_date)
   .flatMap(s=>{const persons=confirmed.get(s.id)||[];if(!persons.length)return [];
     const trip=trips.find(t=>t.id===s.trip_id);
-    return [{id:s.id,date:s.arrival_date,country:s.country_iso2,name:trip.title,people:persons}];
+    const mine=legs.filter(l=>l.trip_id===s.trip_id&&l.verification==='verified'&&loc.get(l.to_location_id)?.country_iso2===s.country_iso2)
+      .map(l=>({a:loc.get(l.from_location_id),b:loc.get(l.to_location_id)})).filter(l=>l.a&&l.b&&l.a.longitude!=null&&l.b.longitude!=null)
+      .map(l=>({a:[l.a.longitude,l.a.latitude],b:[l.b.longitude,l.b.latitude],label:'Let '+l.a.name+' → '+l.b.name}));
+    return [{id:s.id,date:s.arrival_date,country:s.country_iso2,name:trip.title,people:persons,legs:mine,loc:loc.get(s.location_id)}];
   }).sort((a,b)=>a.date.localeCompare(b.date));
  const geo=new Map([...document.querySelectorAll('#countries [data-iso2]')].map(x=>[x.dataset.iso2,x.dataset.name]));
- for(const r of rec){if(!DEST[r.country])DEST[r.country]={name:geo.get(r.country)||r.country,city:geo.get(r.country)||r.country,p:null};}
+ for(const r of rec){if(!DEST[r.country])DEST[r.country]={name:geo.get(r.country)||r.country,city:geo.get(r.country)||r.country,p:null};
+  if(r.loc&&r.loc.longitude!=null&&!DEST[r.country].p)DEST[r.country].p=[r.loc.longitude,r.loc.latitude];}
  TRIPS.splice(0,TRIPS.length,...rec);
  PEOPLE.splice(0,PEOPLE.length,...travel.people.map(p=>({id:p.id,name:p.display_name})));
  const now=new Date();END={y:now.getFullYear(),m:now.getMonth()};
@@ -82,29 +101,38 @@ function timeline(trips,stops,people){
  render();
 }
 async function refresh(){
- const [persons,trips,stops,stopPeople,participants]=await Promise.all([
-  table('travel_people'),table('travel_trips'),table('travel_stops'),table('travel_stop_people'),table('travel_trip_people')
+ const [persons,trips,stops,stopPeople,participants,locations,legs]=await Promise.all([
+  table('travel_people'),table('travel_trips'),table('travel_stops'),table('travel_stop_people'),table('travel_trip_people'),table('travel_locations'),table('travel_legs')
  ]);
- travel.people=persons;travel.trips=trips;travel.attendance=participants;
- peopleOptions();plans();timeline(trips,stops,stopPeople);
+ travel.people=persons;travel.trips=trips;travel.attendance=participants;travel.locations=locations;travel.legs=legs;
+ peopleOptions();plans();timeline(trips,stops,stopPeople,locations,legs);
 }
 async function saveVisit(event){
  event.preventDefault();
  const title=byId('visit-name').value.trim(),country=byId('visit-country').value,date=byId('visit-date').value,persons=visitPeople();
  if(!title||!country||!/^20\d{2}-\d{2}-\d{2}$/.test(date)||!persons.length){message('Vyber název, datum, zemi a alespoň jednu osobu.','error');return;}
- busy(true);let created=null,stop=null;
+ const fromCode=byId('visit-from').value,toCode=byId('visit-to').value;
+ if(fromCode&&fromCode===toCode){message('Odlet a přílet nesmí být stejné letiště.','error');return;}
+ busy(true);let created=null,stop=null,leg=null;
  try{
   const existing=byId('visit-form').dataset.tripId||null;
   let id=existing;
   if(!id){id=must(await travel.db.from('travel_trips').insert({title,status:'completed',category:'private',actual_start:date,actual_end:date}).select('id').single()).id;created=id;}
   const prior=must(await travel.db.from('travel_stops').select('stop_order').eq('trip_id',id));
   const order=1+Math.max(0,...prior.map(x=>x.stop_order));
-  stop=must(await travel.db.from('travel_stops').insert({trip_id:id,stop_order:order,country_iso2:country,arrival_date:date,date_precision:'exact',kind:'stay',verification:'verified'}).select('id').single()).id;
+  const toLoc=await locationId(toCode),fromLoc=await locationId(fromCode);
+  stop=must(await travel.db.from('travel_stops').insert({trip_id:id,stop_order:order,country_iso2:country,location_id:toLoc,arrival_date:date,date_precision:'exact',kind:'stay',verification:'verified'}).select('id').single()).id;
   must(await travel.db.from('travel_stop_people').insert(persons.map(person_id=>({stop_id:stop,person_id,presence:'confirmed'}))));
   must(await travel.db.from('travel_trip_people').upsert(persons.map(person_id=>({trip_id:id,person_id,participation:'confirmed'})),{onConflict:'trip_id,person_id'}));
+  if(toLoc&&fromLoc){
+   const prevLegs=must(await travel.db.from('travel_legs').select('leg_order').eq('trip_id',id));
+   leg=must(await travel.db.from('travel_legs').insert({trip_id:id,leg_order:1+Math.max(0,...prevLegs.map(x=>x.leg_order)),from_location_id:fromLoc,to_location_id:toLoc,departure_date:date,mode:'flight',verification:'verified'}).select('id').single()).id;
+   must(await travel.db.from('travel_leg_people').insert(persons.map(person_id=>({leg_id:leg,person_id,presence:'confirmed'}))));
+  }
   if(existing)must(await travel.db.from('travel_trips').update({title,status:'completed',actual_start:date,actual_end:date,updated_at:new Date().toISOString()}).eq('id',id));
   resetVisit();await refresh();message('Návštěva je potvrzená a uložená.','success');
  }catch(e){
+  if(leg){const r=await travel.db.from('travel_legs').delete().eq('id',leg);if(r.error)console.error('Úklid letu:',r.error);}
   if(stop){const r=await travel.db.from('travel_stops').delete().eq('id',stop);if(r.error)console.error('Úklid zastávky:',r.error);}
   if(created){const r=await travel.db.from('travel_trips').delete().eq('id',created);if(r.error)console.error('Úklid cesty:',r.error);}
   report(e);
@@ -145,7 +173,7 @@ async function initLive(){
   travel.db=auth.client;byId('locked-view').hidden=true;byId('main-app').hidden=false;byId('live-tools').hidden=false;
   byId('mode-label').textContent='RODINNÁ DATABÁZE';byId('mode-label').classList.add('live-pill');
   byId('footnote').textContent='Soukromé cesty se načítají z chráněného Supabase. Samotné plánování nikdy neodemkne zemi.';
-  options();
+  options();airportOptions();
   byId('add-visit').addEventListener('click',()=>openVisit());
   byId('cancel-visit').addEventListener('click',resetVisit);
   byId('visit-form').addEventListener('submit',saveVisit);

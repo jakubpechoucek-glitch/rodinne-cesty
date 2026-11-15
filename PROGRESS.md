@@ -16,10 +16,13 @@ Aktualizováno: 15. listopadu 2026. Vývojová větev: `vyvoj/prvni-demo`.
 - [x] Kontrola syntaxe JS; původní demo otestováno na šířce 1350 a 390 px pomocí Chromium.
 - [x] Kontrola změn: nejsou v nich fotografie pasů, soukromá data cest ani tajné klíče.
 
+- [x] Letadélko letí po trase při každém měsíci s letem (demo i živý režim).
+- [x] Formulář návštěvy má nepovinné „Odlet z / Přílet do“ (číselník letišť `airports.js`); ukládá se do `travel_locations` a `travel_legs`, živá mapa kreslí jen ověřené lety.
+
 ## Zbývá před nasazením
 - [ ] Otestovat živý režim ve skutečném přihlášeném prohlížeči a RLS zápisy.
 - [ ] Ověřit ukazatel bez znalosti koordinát (zvýrazněná země je funkční; letové trasy jen pro doložené body).
-- [ ] Rozšířit editor o konkrétní lety, koordináty a důkazy; doplnit export/import ověřených záznamů.
+- [ ] Rozšířit editor o důkazy (lety a koordináty přes letiště už jsou); doplnit export/import ověřených záznamů.
 - [ ] Ověřit transakční atomicitu ukládání cest a ošetření paralelních synchronizací.
 - [ ] Provést audit ostatních starších `SECURITY DEFINER` funkcí podle výstupu Supabase Security Advisor — samostatný úkol.
 - [x] Změny připraveny pro schválené sloučení do `main`.
