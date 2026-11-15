@@ -16,6 +16,9 @@ Aktualizováno: 15. listopadu 2026. Aktuální vývojová větev: `vyvoj/editor-
 - [x] Kontrola syntaxe JS; původní demo otestováno na šířce 1350 a 390 px pomocí Chromium.
 - [x] Kontrola změn: nejsou v nich fotografie pasů, soukromá data cest ani tajné klíče.
 
+- [x] Letadélko letí po trase při každém měsíci s letem (demo i živý režim).
+- [x] Formulář návštěvy má nepovinné „Odlet z / Přílet do“ (číselník letišť `airports.js`); ukládá se do `travel_locations` a `travel_legs`, živá mapa kreslí jen ověřené lety.
+
 ## Zbývá před nasazením
 - [ ] Otestovat živý režim ve skutečném přihlášeném prohlížeči a RLS zápisy.
 - [ ] Ověřit ukazatel bez znalosti koordinát (zvýrazněná země je funkční; letové trasy jen pro doložené body).
