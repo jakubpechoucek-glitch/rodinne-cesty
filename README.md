@@ -34,5 +34,6 @@ Přímé lokální otevření `index.html` automaticky používá demo, protože
 - Lze založit novou cestu a zapsat zastávky, přesuny letadlem, autem, vlakem, autobusem nebo lodí, účastníky i poznámky.
 - Každá zastávka a každý přesun má stav `k ověření` / `ověřeno` / `zamítnuto`. Neznámé datum či letiště není nutné domýšlet.
 - Ne všechny příchody do zemí mají razítka a ne každé razítko dokazuje let. Proto je třeba oba druhy záznamů oddělit.
+- Mapa vykreslí oblouk letu **jen tehdy**, je-li let potvrzený, má datum, ověřené souřadnice obou míst a cestující. Cesty autem se zatím evidují bez domýšlené silniční trasy.
 - Pouze potvrzený pobyt v dokončené cestě s konkrétním datem a účastníkem odemyká zemi na mapě.
 - Editor provádí několik Supabase zápisů za sebou; potvrzení celé transakce, souběžné úpravy a test v přihlášeném prohlížeči ještě zbývají. Doporučená první fáze provozu je opatrná beta s revizí před každým větším importem.
