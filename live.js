@@ -12,8 +12,7 @@ async function table(name,columns='*'){return must(await travel.db.from(name).se
 function busy(value){document.querySelectorAll('[data-live-action]').forEach(x=>x.disabled=value);}
 function options(){
  const el=byId('visit-country');el.replaceChildren(new Option('Vyber zemi…',''));
- const arr=[...document.querySelectorAll('#countries [data-iso2]')].map(x=>({id:x.dataset.iso2,name:x.dataset.name}))
- .filter(x=>/^[A-Z]{2}$/.test(x.id)).sort((a,b)=>a.name.localeCompare(b.name,'cs'));
+ const arr=COUNTRIES.list().map(x=>({id:x.code,name:x.name}));
  arr.forEach(x=>el.add(new Option(x.name+' ('+x.id+')',x.id)));
 }
 function airportOptions(){
@@ -84,9 +83,9 @@ function timeline(trips,stops,people,locations=[]){
     const trip=trips.find(t=>t.id===s.trip_id);
     return [{id:s.id,date:s.arrival_date,country:s.country_iso2,name:trip.title,people:persons,loc:loc.get(s.location_id)}];
   }).sort((a,b)=>a.date.localeCompare(b.date));
- const geo=new Map([...document.querySelectorAll('#countries [data-iso2]')].map(x=>[x.dataset.iso2,x.dataset.name]));
- for(const r of rec){if(!DEST[r.country])DEST[r.country]={name:geo.get(r.country)||r.country,city:geo.get(r.country)||r.country,p:null};
-  if(r.loc&&r.loc.longitude!=null&&!DEST[r.country].p)DEST[r.country].p=[r.loc.longitude,r.loc.latitude];}
+ for(const r of rec){if(!DEST[r.country]){const n=COUNTRIES.name(r.country);DEST[r.country]={name:n,city:n,p:null};}
+  if(r.loc&&r.loc.longitude!=null&&!DEST[r.country].p)DEST[r.country].p=[r.loc.longitude,r.loc.latitude];
+  if(!DEST[r.country].p)DEST[r.country].p=COUNTRIES.point(r.country);}
  TRIPS.splice(0,TRIPS.length,...rec);
  PEOPLE.splice(0,PEOPLE.length,...travel.people.map(p=>({id:p.id,name:p.display_name})));
  const now=new Date();END={y:now.getFullYear(),m:now.getMonth()};

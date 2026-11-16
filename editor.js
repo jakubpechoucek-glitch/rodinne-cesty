@@ -9,7 +9,7 @@
   const mk = (tag,cls,content) => {const n=document.createElement(tag);if(cls)n.className=cls;if(content!==undefined)text(n,content);return n;};
   const check = res => {if(res.error)throw res.error;return res.data;};
   const today = () => {const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
-  const allCountries = () => [...document.querySelectorAll('#countries [data-iso2]')].map(x=>({code:x.dataset.iso2,name:x.dataset.name||x.dataset.iso2})).filter(x=>/^[A-Z]{2}$/.test(x.code)).sort((a,b)=>a.name.localeCompare(b.name,'cs'));
+  const allCountries = () => COUNTRIES.list();
   const isoNames = () => new Map(allCountries().map(c=>[c.code,c.name]));
   const stamp = date => date||'datum neznámé';
   const fmt = (date) => date ? date.split('-').reverse().join('.') : 'datum neznámé';
