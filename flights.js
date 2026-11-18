@@ -168,16 +168,27 @@
   }
 
   /* ---------- záložky ---------- */
+  const TAB_HASHES = ['#lety','#entitlement'];
   function showTab(name,push) {
-    const flights=name==='lety';
-    for(const sel of MAP_PARTS)document.querySelectorAll(sel).forEach(el=>{if(flights)el.dataset.flHidden='1';else delete el.dataset.flHidden;});
+    const flights=name==='lety',map=name==='mapa';
+    for(const sel of MAP_PARTS)document.querySelectorAll(sel).forEach(el=>{if(!map)el.dataset.flHidden='1';else delete el.dataset.flHidden;});
     S.root.hidden=!flights;
     S.tabs.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===name)));
-    if(push&&history.replaceState)history.replaceState(null,'',location.pathname+location.search+(flights?'#lety':location.hash==='#lety'?'':location.hash));
+    if(push&&history.replaceState){
+      const keep=TAB_HASHES.some(h=>location.hash.startsWith(h))?'':location.hash;
+      history.replaceState(null,'',location.pathname+location.search+(map?keep:'#'+name));
+    }
+    document.dispatchEvent(new CustomEvent('rc-tab',{detail:name}));
+  }
+  /* Další záložky (např. Flight entitlement) se přidají do stejného přepínače. */
+  function addTab(key,label) {
+    if(!S.tabs)build();
+    const b=mk('button','fl-tab',label);b.type='button';b.dataset.tab=key;b.addEventListener('click',()=>showTab(key,true));
+    b.setAttribute('aria-pressed','false');S.tabs.append(b);
   }
   function build() {
     const style=document.createElement('style');
-    style.textContent='[data-fl-hidden]{display:none!important}.fl-tabs{display:flex;gap:8px;margin:6px 0 14px}.fl-tab{background:#173246;color:#d1e0e9;border:1px solid #36566a;border-radius:20px;padding:9px 18px;font-weight:700;font-size:13px}.fl-tab[aria-pressed=true]{background:#1b615f;color:#f2fff8;border-color:#69d3c3}'
+    style.textContent='[data-fl-hidden]{display:none!important}.fl-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px}.fl-tab{background:#173246;color:#d1e0e9;border:1px solid #36566a;border-radius:20px;padding:9px 18px;font-weight:700;font-size:13px}.fl-tab[aria-pressed=true]{background:#1b615f;color:#f2fff8;border-color:#69d3c3}'
     +'.fl-view{margin-top:6px}.fl-view[hidden]{display:none!important}.fl-bar{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:8px;margin-bottom:10px}.fl-bar input,.fl-bar select,.fl-form input,.fl-form select{width:100%;background:#152e40;color:#fff;border:1px solid #426175;border-radius:9px;padding:10px;font:inherit}'
     +'.fl-count{font-size:12px;color:#9fb5c4;margin:0 0 10px}.fl-msg{padding:9px 12px;border-radius:9px;font-size:13px;margin:0 0 10px;background:#173246;border:1px solid #36566a}.fl-msg[hidden]{display:none}.fl-msg[data-kind=error]{background:#3d2328;border-color:#b85b68;color:#ffd5da}.fl-msg[data-kind=success]{background:#173d33;border-color:#4fae8d}'
     +'.fl-list{display:grid;gap:9px}.fl-card{background:#0d2334;border:1px solid #2c495d;border-left:5px solid #4fae8d;border-radius:12px;padding:12px 14px;display:grid;gap:7px}.fl-card.fl-warn{border-left-color:#f0be75}.fl-card.fl-bad{border-left-color:#e0707f}'
@@ -209,10 +220,10 @@
     if(!S.root)build();
     try{await load();render();}
     catch(e){console.error('Lety',e);render();say('Přehled letů se nepodařilo načíst: '+(e?.message||e),'error');}
-    showTab(location.hash==='#lety'?'lety':'mapa',false);
+    const want=location.hash.slice(1).split('/')[0];showTab(S.tabs.querySelector('[data-tab="'+want+'"]')?want:'mapa',false);
     S.ready=true;
   }
   async function sync() {if(!S.ready||S.busy)return;try{await load();render();}catch(e){console.error('Lety',e);say('Přehled letů se nepodařilo obnovit: '+(e?.message||e),'error');}}
-  window.RodinneCestyFlights={mount:(db,refresh)=>start('live',db,refresh),sync};
+  window.RodinneCestyFlights={mount:(db,refresh)=>start('live',db,refresh),sync,addTab,showTab};
   if(new URLSearchParams(location.search).has('demo')||location.protocol==='file:')start('demo');
 })();

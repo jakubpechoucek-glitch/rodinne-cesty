@@ -1,0 +1,49 @@
+/* Flight entitlement – vzhled (tmavý styl shodný s ostatními záložkami) */
+.en-view{margin-top:6px;color:#e3f0f6}.en-view[hidden]{display:none!important}
+.en-sub{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.en-sub button{background:#173246;color:#d1e0e9;border:1px solid #36566a;border-radius:16px;padding:7px 14px;font:inherit;font-size:13px;font-weight:700}
+.en-sub button[aria-pressed=true]{background:#1b615f;color:#f2fff8;border-color:#69d3c3}
+.en-note{font-size:12px;color:#9fb5c4;margin:0 0 10px}
+.en-msg{padding:9px 12px;border-radius:9px;font-size:13px;margin:0 0 10px;background:#173246;border:1px solid #36566a}.en-msg[hidden]{display:none}
+.en-msg[data-kind=error]{background:#3d2328;border-color:#b85b68;color:#ffd5da}.en-msg[data-kind=success]{background:#173d33;border-color:#4fae8d}
+.en-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:12px}
+.en-tile{background:#0d2334;border:1px solid #2c495d;border-radius:12px;padding:10px 12px}
+.en-tile b{display:block;font-size:26px;line-height:1.1}.en-tile span{font-size:12px;color:#9fb5c4}.en-tile small{display:block;font-size:11px;color:#9fb5c4;margin-top:2px}
+.en-tile.ok b{color:#8ff0c8}.en-tile.warn b{color:#f6cd8d}.en-tile.bad b{color:#ff9aa8}
+.en-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.en-card{background:#0d2334;border:1px solid #2c495d;border-left:5px solid #4fae8d;border-radius:12px;padding:11px 13px;display:grid;gap:6px}
+.en-card.warn{border-left-color:#f0be75}.en-card.bad{border-left-color:#e0707f}.en-card.family{border-left-color:#7f9cff}.en-card.summary{border-left-color:#8a98a3}
+.en-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.en-name{font-size:15px;font-weight:700}.en-big{font-size:30px;font-weight:800;line-height:1}.en-big small{font-size:12px;font-weight:400;color:#9fb5c4}
+.en-bar{height:8px;border-radius:5px;background:#1b3447;overflow:hidden}.en-bar i{display:block;height:100%;background:#4fae8d}
+.en-card.warn .en-bar i{background:#f0be75}.en-card.bad .en-bar i{background:#e0707f}
+.en-meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:#aac0ce}
+.en-chips{display:flex;flex-wrap:wrap;gap:5px}.en-chip{font-size:11px;background:#173246;border:1px solid #36566a;border-radius:10px;padding:2px 8px;color:#cfe0ea}
+.en-badge{font-size:11px;border-radius:12px;padding:3px 9px;font-weight:700}
+.en-b-ok{background:#1a4c3d;color:#b8ffe3}.en-b-warn{background:#4a3a1c;color:#ffdca0}.en-b-bad{background:#4d2430;color:#ffc4cd}.en-b-family{background:#26325c;color:#cbd6ff}.en-b-sum{background:#2b3640;color:#cfdae2}
+.en-bar-f{display:grid;grid-template-columns:2fr repeat(4,1fr);gap:8px;margin-bottom:10px}
+.en-view input,.en-view select,.en-view textarea{width:100%;background:#152e40;color:#fff;border:1px solid #426175;border-radius:9px;padding:10px;font:inherit}
+.en-list{display:grid;gap:9px}
+.en-money{font-size:13px;display:grid;gap:2px}.en-money .over{color:#ffc27a;font-weight:700}.en-money .ok{color:#9ff0cc}
+.en-btn{border:1px solid #3d6175;background:#173246;color:#e3f0f6;border-radius:10px;padding:8px 14px;font:inherit;font-size:13px;justify-self:start;cursor:pointer}
+.en-primary{background:#2c827a;border-color:#83dfd0;color:#fff;font-weight:700}.en-danger{border-color:#b85b68;color:#ffc4cd}
+.en-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:6px;padding-top:10px;border-top:1px solid #2c495d}
+.en-field{display:grid;gap:4px;font-size:12px;color:#d4e4ee}.en-wide{grid-column:1/-1}
+.en-actions{display:flex;flex-wrap:wrap;gap:8px;grid-column:1/-1}
+.en-section{margin:0 0 18px}.en-section h3{font-size:15px;margin:0 0 8px}
+.en-table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;font-size:13px}.en-table th,.en-table td{border-bottom:1px solid #2c495d;padding:6px 8px;text-align:left}.en-table th{color:#9fb5c4;font-weight:600}
+.en-empty{color:#a8bbc6;font-size:13px}
+.en-print-host{display:none}
+@media(max-width:650px){.en-bar-f{grid-template-columns:1fr 1fr}.en-bar-f input{grid-column:1/-1}.en-big{font-size:26px}}
+@media print{
+  body.en-printing>*:not(#en-print){display:none!important}
+  body.en-printing #en-print{display:block!important;position:static;background:#fff;color:#000;padding:16px;font:12px/1.4 Arial,sans-serif}
+  #en-print table{width:100%;border-collapse:collapse;margin:0 0 16px}#en-print th,#en-print td{border:1px solid #999;padding:4px 6px;text-align:left}
+  #en-print h1{font-size:18px}#en-print h2{font-size:14px;margin:14px 0 6px}
+}
+
+.en-hero{margin-bottom:12px;padding:16px 18px}.en-hero .en-big{font-size:48px}.en-hero .en-big small{font-size:15px}
+.en-pace{font-size:13px;color:#cfe0ea;margin-top:2px}
+.en-yrow{display:grid;grid-template-columns:48px 1fr;gap:8px;align-items:center;margin:0 0 6px}.en-ylab{font-size:13px;color:#cfe0ea}
+.en-ytrack{display:flex;gap:2px;min-height:22px}.en-ytrack i{display:block;font-style:normal;font-size:12px;line-height:22px;padding:0 6px;border-radius:5px;color:#06222d;font-weight:700;min-width:26px;box-sizing:border-box}
+.en-seg-b{background:#4fae8d}.en-seg-f{background:#7f9cff}
