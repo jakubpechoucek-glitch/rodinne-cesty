@@ -1,6 +1,6 @@
 # Flight entitlement — zadání a datový model
 
-**Verze:** 0.1 (návrh, ke schválení)
+**Verze:** 1.0 (rozhodnutí zadavatele zapracována, ke schválení před stavbou)
 **Datum:** 18. 11. 2026
 **Navazuje na:** `docs/PROJECT.md` (Rodinné cesty), záložka Lety (`flights.js`)
 
@@ -35,15 +35,30 @@ Záložka a export jsou **anglicky** (názvy, popisky, tlačítka, export). Zbyt
 
 Zdrojová tabulka je po rocích (2023, 2024, 2025) a po měsících. Obsahuje jen **počet** letenek v měsíci, **ne data letu, ceny ani trasy**. Ty doplní rodina sama, import tabulky tedy slouží jen jako kontrolní součet.
 
+### 3a. Výpočet doplatku (strhne se ze mzdy)
+
+U letenky čerpané z benefitu platí:
+
+```
+celková cena = cena letenky + příplatek za business   (vše v CZK podle kurzu v den nákupu)
+doplatek     = max(0, celková cena − limit platný v den nákupu)
+```
+
+- Příplatek za business se do celkové ceny **počítá**.
+- Doplatek je částka, kterou zaměstnavatel strhne ze mzdy. Zobrazí se v CZK a v PHP.
+- Letenka pod limitem má doplatek 0 a je označena zeleně. Letenka nad limitem je označena oranžově s vypsaným doplatkem.
+- Letenka zaplacená rodinou samostatně (bez benefitu) nečerpá nárok a nemá limit ani doplatek.
+- Limit je **pravidlo s platností od–do** a lze ho kdykoli změnit. Aktuální výše a platnost jsou jen v databázi, ne v repu. Letenka se vždy posuzuje podle limitu platného v den nákupu.
+
 ## 4. Rozsah první verze (MVP)
 
 1. **Summary:** celkem nárok, čerpáno, zbývá. Za celé období i po letech. Barevně: v pořádku / blízko limitu / přečerpáno nebo k ověření.
 2. **Tickets:** seznam letenek (jedna řádka = jedna osoba, tam i zpět). Hledání, filtry (osoba, rok, třída, stav, způsob úhrady) a úprava přímo v řádku podle vzoru záložky Lety.
 3. **Cena:** částka v originální měně (podle faktury) plus přepočet do **PHP** (měna zaměstnavatele a místa bydliště) a **CZK** (limit ceny a pohled rodiny). Příplatek za business zvlášť. Kontrola limitu ceny (OK / nad limitem).
 4. **People:** čerpání po osobách. Kdo s kým letěl. Samostatně osoba žijící v Londýně.
-5. **Zdroj úhrady:** firemní benefit / zaplaceno rodinou / smíšené (benefit + doplatek).
+5. **Zdroj úhrady:** čerpáno z benefitu / zaplaceno rodinou samostatně. Doplatek nad limit se **dopočítá**, nevybírá se ručně (viz 3a).
 6. **Export** do CSV a tisknutelného přehledu (anglicky) pro kolegyni.
-7. **Jednorázový import** staré tabulky. Tlačítko, nikdy do gitu, vyžaduje kontrolu před uložením.
+7. **Ruční zadání** historie a počátečního stavu přes formulář (žádný import tabulky). Souhrnný záznam pro roky bez detailu.
 8. **Režim `?demo`** se smyšlenými lety a cenami.
 9. Odkaz zpět do Rozcestníku a sdílitelný odkaz (`#entitlement`).
 
@@ -57,15 +72,16 @@ Nové tabulky s předponou `travel_`, stejný model přístupu jako u stávajíc
 |---|---|---|
 | `travel_entitlement_grants` | Dávky nároku po osobách | `id`, `person_id`, `valid_from`, `valid_to`, `tickets`, `reason` (základní / prodloužení smlouvy / zpětně uplatněno), `source_note` |
 | `travel_entitlement_settings` | Limit ceny letenky v čase | `valid_from`, `valid_to`, `price_cap_amount`, `price_cap_currency` (zatím CZK) |
-| `travel_tickets` | Jedna zpáteční letenka jedné osoby (nebo souhrnný záznam historického čerpání) | `id`, `person_id`, `outbound_date`, `return_date`, `from_location_id`, `to_location_id`, `cabin` (economy/business), `payment_source` (benefit/family/mixed), `price_amount`, `price_currency`, `business_surcharge_amount`, `status`, `notes`, `trip_id` (nepovinně) |
+| `travel_tickets` | Jedna zpáteční letenka jedné osoby (nebo souhrnný záznam historického čerpání) | `id`, `person_id`, `outbound_date`, `return_date`, `from_location_id`, `to_location_id`, `cabin` (economy/business), `payment_source` (benefit/family), `price_amount`, `price_currency`, `business_surcharge_amount`, `status`, `notes`, `trip_id` (nepovinně) |
 | `travel_fx_rates` | Kurzy pro přepočet | `rate_date`, `currency`, `czk_per_unit`, `source` |
+| `travel_entitlement_transfers` | Převod letenek mezi osobami | `id`, `from_person_id`, `to_person_id`, `tickets`, `transfer_date`, `notes` |
 | `travel_ticket_legs` | Vazba letenky na existující lety | `ticket_id`, `leg_id` |
 
 Poznámky:
 
 - Číslo rezervace, čísla dokladů a jiné osobní identifikátory se neukládají.
 - Letenka se **nepočítá** jako dva lety. Samostatné lety ze záložky Lety zůstávají; vazba je volitelná, aby se údaje nezadávaly dvakrát.
-- Zbývající nárok osoby = součet jejích dávek − počet jejích letenek z benefitu. Počítá se, neukládá se.
+- Zbývající nárok osoby = dávky + přijaté převody − odeslané převody − letenky z benefitu. Počítá se, neukládá se.
 - Historický součet (čerpáno před evidencí jednotlivých letů) se vede jako zvláštní „souhrnný“ záznam (`status = summary`, počet kusů), aby zůstatek sedil, i když chybí detail. Výpočet bude v samostatném souboru bez práce se stránkou, aby šel testovat.
 - Přepočet: originální částka se nikdy nepřepisuje. Hodnoty v PHP a CZK se dopočítají z uložených kurzů (PHP, CZK, případně EUR a další měny podle faktury).
 
@@ -73,27 +89,28 @@ Poznámky:
 
 Stejné jako zbytek aplikace: statická stránka (HTML, CSS, vanilla JS) na GitHub Pages, data v Supabase za přihlášením, `?demo` s paměťovým úložištěm. Nový soubor `entitlement.js` (zobrazení) a `entitlement-calc.js` (výpočty).
 
-## 7. Rozhodnuto a otevřené otázky
+## 7. Rozhodnuto
 
-**Rozhodnuto**
-- Smlouva je prodloužena do 06/2028, přibývají 2 letenky na osobu (nová dávka s platností do 06/2028). Datum začátku dávky doplní zadavatel.
-- Zobrazovací měny jsou **PHP** (hlavní, měna zaměstnavatele a bydliště) a **CZK** (limit ceny, rodina). Originální měna z faktury zůstává vždy uložená.
-- Zdrojem kurzů: PHP a CZK jsou v denním kurzovním lístku ČNB, doporučeno stahovat při zadání letenky (dohledám a ověřím při stavbě).
+- Smlouva je prodloužena do 06/2028, přibývají 2 letenky na osobu (nová dávka). Datum začátku doplní zadavatel.
+- Nevyužité letenky lze převést mezi osobami. Evidence je po osobách, přehled ukazuje i součet za rodinu. Převod se zapíše jako samostatný záznam (kdo komu, kolik, kdy).
+- Zobrazovací měny: **PHP** (hlavní) a **CZK** (limit). Originální měna z faktury zůstává uložená.
+- Kurz: denní kurz ČNB, ukládá se při zadání letenky (dostupnost PHP ověřím při stavbě).
+- Limit ceny je měnitelný, platnost od–do (viz 3a). Příplatek za business se do limitu počítá.
+- Lety z Londýna se do benefitu počítají.
+- Počáteční stav a lety doplní zadavatel ručně z dostupných záznamů (ne importem tabulky). Souhrnný záznam historického čerpání zůstane pro roky bez detailu.
+- Export pro kolegyni: anglicky, CSV + tisknutelná stránka ve členění osoba / dávka / čerpáno / zbývá.
 
-**Otevřené**
-1. **Převody mezi osobami.** Zůstatky se u osob liší. Lze nevyužité letenky jedné osoby použít pro jinou, nebo je nárok striktně na osobu? Doporučení: evidovat po osobách a ukazovat i součet za rodinu.
-2. **Aktuální stav.** Tabulka je asi rok stará. Pošli nejnovější přehled nebo seznam letů od té doby, ať počáteční zůstatek sedí.
-3. **Limit ceny.** Současný limit platí do konce 2026 (výše je jen v databázi). Co platí po novém roce a v jaké měně? Počítá se cena v den nákupu? Doporučení: limit jako pravidlo s platností od–do a s vlastní měnou.
-4. **Příplatek za business.** Počítá se do limitu ceny letenky, nebo se hradí zvlášť? Doporučení: ukazovat obě částky i součet a limit hlídat podle toho, co potvrdíš.
-5. **Londýn.** Má osoba žijící v Londýně lety z benefitu z Londýna, nebo jen z místa bydliště rodiny? Doporučení: trasa i zdroj úhrady volné.
-6. **Export pro kolegyni.** Doporučení: anglicky, CSV + tisknutelná stránka ve stejném členění jako její tabulka (osoba, dávka, čerpáno, zbývá). Do repa se nic z exportu neukládá.
+## Otevřené (drobné)
+
+- Doplatek se strhává ve mzdě v PHP. Přepočítat CZK→PHP kurzem v den nákupu, nebo v den srážky? Zatím: den nákupu, lze změnit.
+- Datum začátku nové dávky (2 letenky na osobu) a její platnost.
 
 ## 8. Postup
 
-1. Ty odpovíš na otázky výše (zejména 1 a 2).
-2. Tabulku jsem prošel a zapracoval (viz kapitola 3). Zdrojová tabulka zůstává mimo git.
-3. Po tvém schválení udělám migraci a návrh obrazovek (nejprve `?demo`).
-4. Ověření na mobilu i desktopu, potom teprve import skutečných dat tlačítkem.
+1. Návrh obrazovek v režimu `?demo` se smyšlenými daty (Summary, Tickets, People, Export), mobil a desktop.
+2. Po schválení migrace `travel_*` tabulek (grants, tickets, settings, fx_rates, transfers) s RLS a test, že nečlen rodiny nevidí nic.
+3. Ruční zadání skutečných dat zadavatelem přes formulář v přihlášeném režimu, nic z toho do gitu.
+4. Dokumentace projektů na Rozcestníku a ověření odkazu zpět do Rozcestníku.
 
 ## 9. Soukromí
 
