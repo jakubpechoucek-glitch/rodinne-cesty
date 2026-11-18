@@ -25,6 +25,9 @@ Aktualizováno: 15. listopadu 2026. Aktuální vývojová větev: `vyvoj/editor-
 
 - [x] Přehrávání časové osy zpomalí v měsíci s letem: let trvá 3 s (při 2× a 4× úměrně kratší), několik letů v měsíci letí postupně a po posledním se 1 s počká.
 
+## Plánováno
+- [ ] Záložka „Flight entitlement“ (anglicky): sledování firemního nároku na letenky. Zadání a otevřené otázky v `docs/FLIGHT_ENTITLEMENT.md`; čeká na odpovědi zadavatele.
+
 ## Zbývá před nasazením
 - [ ] Otestovat živý režim ve skutečném přihlášeném prohlížeči a RLS zápisy.
 - [ ] Ověřit ukazatel bez znalosti koordinát (zvýrazněná země je funkční; letové trasy jen pro doložené body).
