@@ -64,4 +64,26 @@ assert.equal(d.czk,6000); assert.equal(d.php,15000); assert.equal(d.count,1);
 
 // CSV: uvozovky a ochrana proti vzorcům
 assert.equal(C.csvCell('=1+1'),"'=1+1"); assert.equal(C.csvCell('-5'),'-5'); assert.equal(C.csvCell('a,b'),'"a,b"');
+// přehled ve tvaru tabulky zaměstnavatele (smyšlená data): 4 osoby, 56 + 8 + 8 letenek za rodinu
+const ppl=['a','b','c','d'].map(id=>({id,display_name:id.toUpperCase()}));
+const gr=[{valid_from:'2018-07-01',tickets:56},{valid_from:'2025-07-01',tickets:8},{valid_from:'2026-07-01',tickets:8}];
+const tk=[];
+for(const p of ['a','b','c','d']){
+  tk.push({person_id:p,status:'summary',payment_source:'benefit',ticket_count:undefined,count:9,year:2023});
+  tk.push({person_id:p,status:'summary',payment_source:'benefit',count:1,year:2023,outbound_date:'2023-07-01'});
+  tk.push({person_id:p,status:'summary',payment_source:'benefit',count:1,year:2024,outbound_date:'2024-01-01'});
+  tk.push({person_id:p,status:'summary',payment_source:'benefit',count:1,year:2024,outbound_date:'2024-07-01'});}
+tk.push({person_id:'a',status:'flown',payment_source:'benefit',outbound_date:'2025-01-10'},{person_id:'a',status:'flown',payment_source:'benefit',outbound_date:'2025-07-05'},{person_id:'a',status:'flown',payment_source:'benefit',outbound_date:'2025-08-05'},
+  {person_id:'b',status:'cancelled',payment_source:'benefit',outbound_date:'2025-02-10'},{person_id:'b',status:'flown',payment_source:'family',outbound_date:'2025-03-10'});
+const rep=C.hrReport(ppl,gr,tk,'2026-11-18');
+assert.deepEqual(rep.blocks.map(b=>b.year),[2023,2024,2025,2026]);
+const row=(y,p)=>rep.blocks.find(b=>b.year===y).rows.find(r=>r.person_id===p);
+assert.deepEqual([row(2023,'a').tickets,row(2023,'a').used,row(2023,'a').remaining,row(2023,'a').unmonthed],[14,10,4,9]);
+assert.deepEqual([row(2024,'a').tickets,row(2024,'a').used,row(2024,'a').remaining],[4,2,2]);
+assert.deepEqual([row(2025,'a').tickets,row(2025,'a').used,row(2025,'a').remaining],[4,3,1]);   // 2 přenesené + 2 nové
+assert.deepEqual([row(2025,'b').used,row(2025,'b').remaining],[0,4]);                           // zrušená a rodinná se nepočítají
+assert.equal(row(2025,'a').months[0],1); assert.equal(row(2025,'a').months[6],1); assert.equal(row(2023,'a').months[6],1);
+assert.deepEqual([row(2026,'a').tickets,row(2026,'a').used,row(2026,'a').remaining],[3,0,3]);  // + dávka od 07/2026
+assert.equal(rep.totalRemaining,3+6+6+6);
+assert.equal(C.hrReport(ppl,gr,[{person_id:'zzz',status:'flown',payment_source:'benefit',outbound_date:'2025-01-10'}],'2026-11-18').unassigned,1);
 console.log('OK: všechny testy prošly');

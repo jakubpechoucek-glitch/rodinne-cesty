@@ -27,8 +27,11 @@
       {id: 'g1', valid_from: '2018-07-01', valid_to: '2025-06-30', tickets: 56, reason: 'Base entitlement', source_note: '4 people × 14'},
       {id: 'g2', valid_from: '2025-07-01', valid_to: '2026-06-30', tickets: 8, reason: 'Contract extension', source_note: '4 people × 2'},
       {id: 'g3', valid_from: '2026-07-01', valid_to: '2028-06-30', tickets: 8, reason: 'Contract extension', source_note: '4 people × 2'}];
-    const tickets = [{id: 's-2023', person_id: '', status: 'summary', count: 30, year: 2023, payment_source: 'benefit',
-      notes: 'Earlier years claimed retroactively in one batch (no per-flight detail)'}];
+    const tickets = [];
+    for (const p of ids) {
+      tickets.push({id: 's-r-' + p, person_id: p, status: 'summary', count: 9, year: 2023, payment_source: 'benefit', notes: 'Claimed retroactively for earlier years (no per-flight detail)'},
+        {id: 's-j-' + p, person_id: p, status: 'summary', count: 1, year: 2023, outbound_date: '2023-07-01', payment_source: 'benefit', notes: 'Month only, no flight detail'});
+    }
     const t = (person, out, back, purchase, from, to, cabin, source, price, cur, sur, status, notes) => tickets.push({id: uid(), person_id: person,
       outbound_date: out, return_date: back, purchase_date: purchase, from, to, cabin, payment_source: source, price_amount: price,
       price_currency: cur, business_surcharge_amount: sur || 0, status, notes: notes || ''});
@@ -201,7 +204,7 @@
     const cls = cancelled ? 'summary' : c.level === 'over' ? 'warn' : c.level === 'bad' ? 'bad' : c.level === 'family' ? 'family' : c.level === 'summary' ? 'summary' : '';
     const card = mk('div', 'en-card ' + cls);
     const head = mk('div', 'en-head');
-    if (t.status === 'summary') head.append(mk('div', 'en-name', t.count + ' tickets · ' + t.year + ' (summary)'));
+    if (t.status === 'summary') head.append(mk('div', 'en-name', (t.person_id ? pname(t.person_id) + ' · ' : '') + t.count + ' ticket' + (t.count === 1 ? '' : 's') + ' · ' + (t.outbound_date ? MONTHS[+t.outbound_date.slice(5, 7) - 1] + ' ' : '') + t.year + ' (summary)'));
     else head.append(mk('div', 'en-name', pname(t.person_id) + ' · ' + t.from + ' → ' + t.to));
     const badges = mk('div', 'en-chips');
     const badge = (text, k) => badges.append(mk('span', 'en-badge en-b-' + k, text));
@@ -239,10 +242,10 @@
     const form = mk('form', 'en-card'); const fs = mk('div', 'en-form');
     const summary = t.status === 'summary';
     const f = {};
-    if (!summary) {f.person = select(personOpts(), t.person_id); fs.append(lbl('Traveller', f.person));}
+    f.person = select(personOpts(), t.person_id); fs.append(lbl('Traveller', f.person));
     if (summary) {
-      f.count = input('number', t.count, {min: 0, step: 1}); f.year = input('number', t.year, {min: 2018, max: 2100, step: 1});
-      fs.append(lbl('Tickets used', f.count), lbl('Year', f.year));
+      f.count = input('number', t.count, {min: 0, step: 1}); f.year = input('number', t.year, {min: 2018, max: 2100, step: 1}); f.month = input('month', t.outbound_date ? t.outbound_date.slice(0, 7) : '');
+      fs.append(lbl('Tickets used', f.count), lbl('Month (optional)', f.month), lbl('Year (if no month)', f.year));
     } else {
       f.purchase = input('date', t.purchase_date); f.out = input('date', t.outbound_date); f.back = input('date', t.return_date);
       const dl = document.createElement('datalist'); dl.id = 'en-airports'; for (const a of airports()) {const o = document.createElement('option'); o.value = a.iata; o.label = a.name; dl.append(o);}
@@ -258,7 +261,7 @@
     }
     f.notes = input('text', t.notes, {maxLength: 200}); fs.append(lbl('Notes', f.notes, true));
     const preview = mk('div', 'en-note en-wide'); fs.append(preview);
-    const read = () => summary ? Object.assign({}, t, {count: Number(f.count.value), year: Number(f.year.value), notes: f.notes.value.trim()}) :
+    const read = () => summary ? Object.assign({}, t, {person_id: f.person.value, count: Number(f.count.value), year: f.month.value ? Number(f.month.value.slice(0, 4)) : Number(f.year.value), outbound_date: f.month.value ? f.month.value + '-01' : null, notes: f.notes.value.trim()}) :
       Object.assign({}, t, {person_id: f.person.value, purchase_date: f.purchase.value, outbound_date: f.out.value, return_date: f.back.value,
         from: f.from.value.trim().toUpperCase(), to: f.to.value.trim().toUpperCase(), cabin: f.cabin.value, payment_source: f.source.value, status: f.status.value,
         price_amount: f.price.value === '' ? NaN : Number(f.price.value), price_currency: f.cur.value, business_surcharge_amount: Number(f.sur.value || 0), notes: f.notes.value.trim()});
@@ -350,12 +353,6 @@
   }
 
   /* ---------- Export ---------- */
-  function summaryRows() {
-    const P = C.pool(S.grants, S.tickets), by = C.usedByYear(S.tickets);
-    const rows = [['Item', 'Tickets'], ['Granted in total', P.granted], ['Used', P.used], ['Remaining', P.remaining], ['Booked, not flown yet', P.booked], ['', ''], ['Year', 'Used from entitlement']];
-    for (const y of Object.keys(by).sort()) rows.push([y, by[y].benefit]);
-    return rows;
-  }
   function ticketRows() {
     const rows = [['Traveller', 'Status', 'Outbound', 'Return', 'From', 'To', 'Cabin', 'Paid by', 'Purchase date', 'Price', 'Currency', 'Business surcharge', 'Total CZK', 'Total PHP', 'Limit CZK', 'Deduction CZK', 'Deduction PHP', 'Notes']];
     for (const t of S.tickets.slice().sort((a, b) => (a.outbound_date || '').localeCompare(b.outbound_date || ''))) {
@@ -370,25 +367,84 @@
     const blob = new Blob(['﻿' + C.toCsv(rows)], {type: 'text/csv;charset=utf-8'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   }
+  /* Přehled pro zaměstnavatele ve tvaru jeho tabulky: bloky po letech, osoby, měsíce, Tickets / Used / Remaining. */
+  const hrReport = () => C.hrReport(S.people, S.grants, S.tickets, today());
+  function hrRows(rep) {
+    const rows = [];
+    for (const b of rep.blocks) {
+      rows.push(['Ticketing transactions ' + b.year], ['Name', ...MONTHS, 'Tickets', 'Used', 'Remaining']);
+      for (const r of b.rows) rows.push([r.name, ...r.months.map(m => m || ''), r.tickets, r.used, r.remaining]);
+      rows.push([]);
+    }
+    rows.push(['Remaining tickets as of ' + date(today())], ['Name', 'Remaining']);
+    for (const r of rep.remainingNow) rows.push([r.name, r.remaining]);
+    rows.push(['Total', rep.totalRemaining]);
+    return rows;
+  }
+  function hrBlockEl(b) {
+    const t = document.createElement('table'); t.className = 'en-table en-hr';
+    const cap = document.createElement('caption'); cap.textContent = 'Ticketing transactions ' + b.year; t.append(cap);
+    const head = document.createElement('tr');
+    for (const h of ['Name', ...MONTHS, 'Tickets', 'Used', 'Remaining']) head.append(Object.assign(document.createElement('th'), {textContent: h}));
+    t.append(head);
+    for (const r of b.rows) {
+      const tr = document.createElement('tr');
+      tr.append(Object.assign(document.createElement('td'), {textContent: r.name, className: 'en-hr-name'}));
+      for (const m of r.months) tr.append(Object.assign(document.createElement('td'), {textContent: m || '', className: 'en-hr-m'}));
+      tr.append(Object.assign(document.createElement('td'), {textContent: r.tickets, className: 'en-hr-n'}), Object.assign(document.createElement('td'), {textContent: r.used, className: 'en-hr-n'}),
+        Object.assign(document.createElement('td'), {textContent: r.remaining, className: 'en-hr-n en-hr-rem ' + (r.remaining <= 0 ? 'en-r0' : r.remaining <= 1 ? 'en-r1' : 'en-r2')}));
+      t.append(tr);
+    }
+    return t;
+  }
+  function hrNotes(rep) {
+    const out = [];
+    for (const b of rep.blocks) {
+      const u = b.rows.map(r => r.unmonthed).filter(Boolean);
+      if (!u.length) continue;
+      const same = u.every(x => x === u[0]) && u.length === b.rows.length;
+      out.push('* ' + b.year + ': ' + (same ? u[0] + ' ticket' + (u[0] === 1 ? '' : 's') + ' per person' : b.unmonthed + ' ticket' + (b.unmonthed === 1 ? '' : 's') + ' in total') + ' without a month (e.g. claimed retroactively for earlier years) are included in Used.');
+    }
+    out.push('Entitlement granted to the family is divided equally between the ' + S.people.length + ' people. Tickets = remaining from the previous year + new entitlement of the year.');
+    if (rep.unassigned) out.push('⚠ ' + rep.unassigned + ' used ticket' + (rep.unassigned === 1 ? ' is' : 's are') + ' not assigned to a person and not shown in the table.');
+    return out;
+  }
+  function confirmEl(rep) {
+    const t = document.createElement('table'); t.className = 'en-table en-confirm';
+    const head = document.createElement('tr'); for (const h of ['Name', 'Remaining tickets']) head.append(Object.assign(document.createElement('th'), {textContent: h})); t.append(head);
+    for (const r of rep.remainingNow) {const tr = document.createElement('tr'); tr.append(Object.assign(document.createElement('td'), {textContent: r.name}), Object.assign(document.createElement('td'), {textContent: r.remaining, className: 'en-hr-n'})); t.append(tr);}
+    const tr = document.createElement('tr'); tr.className = 'en-total'; tr.append(Object.assign(document.createElement('td'), {textContent: 'Total'}), Object.assign(document.createElement('td'), {textContent: rep.totalRemaining, className: 'en-hr-n'})); t.append(tr);
+    return t;
+  }
+  function download(name, rows) {
+    const blob = new Blob(['\ufeff' + C.toCsv(rows)], {type: 'text/csv;charset=utf-8'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
   function printView() {
     document.getElementById('en-print')?.remove();
-    const host = mk('div', 'en-print-host'); host.id = 'en-print';
-    const table = rows => {const t = document.createElement('table'); rows.forEach((r, i) => {const tr = document.createElement('tr'); r.forEach(v => tr.append(Object.assign(document.createElement(i ? 'td' : 'th'), {textContent: v == null ? '' : v}))); t.append(tr);}); return t;};
-    host.append(mk('h1', null, 'Home leave tickets – entitlement overview'), mk('p', null, 'Generated ' + date(new Date().toISOString().slice(0, 10)) + (S.mode === 'demo' ? ' (demo data)' : '')),
-      mk('h2', null, 'Summary'), table(summaryRows()), mk('h2', null, 'Tickets'), table(ticketRows()));
+    const rep = hrReport(), host = mk('div', 'en-print-host'); host.id = 'en-print';
+    host.append(mk('h1', null, 'Home leave tickets – overview for confirmation'), mk('p', null, 'Status as of ' + date(today()) + (S.mode === 'demo' ? ' (demo data)' : '')),
+      mk('h2', null, 'Remaining tickets'), confirmEl(rep), mk('p', null, 'Please confirm that the remaining tickets above match your records.'));
+    for (const b of rep.blocks) host.append(hrBlockEl(b));
+    for (const n of hrNotes(rep)) host.append(mk('p', 'en-fn', n));
     document.body.append(host); document.body.classList.add('en-printing');
     const done = () => {document.body.classList.remove('en-printing'); host.remove(); window.removeEventListener('afterprint', done);};
     window.addEventListener('afterprint', done); window.print();
   }
   function renderExport(box) {
-    box.append(mk('p', 'en-note', 'For the colleague who keeps the official record. Files are generated in your browser and are not stored anywhere.'));
+    const rep = hrReport();
+    box.append(mk('h3', null, 'Overview for the employer – please confirm'));
+    box.append(mk('p', 'en-note', 'Same layout as the employer\'s own table: one block per year, months of departure, Tickets (available) / Used / Remaining. Send it, and ask only for a confirmation that the remaining tickets are correct.'));
     const s = mk('div', 'en-section');
-    s.append(btn('Download summary (CSV)', 'en-primary', () => download('entitlement-summary.csv', summaryRows())), document.createTextNode(' '),
-      btn('Download all tickets (CSV)', 'en-primary', () => download('entitlement-tickets.csv', ticketRows())), document.createTextNode(' '),
-      btn('Print / save as PDF', '', printView));
+    s.append(btn('Print / save as PDF', 'en-primary', printView), document.createTextNode(' '),
+      btn('Download table (CSV)', '', () => download('entitlement-overview.csv', hrRows(rep))), document.createTextNode(' '),
+      btn('Download ticket details (CSV)', '', () => download('entitlement-tickets.csv', ticketRows())));
     box.append(s);
-    const t = mk('table', 'en-table'); summaryRows().forEach((r, i) => {const tr = document.createElement('tr'); r.forEach(v => tr.append(Object.assign(document.createElement(i ? 'td' : 'th'), {textContent: v}))); t.append(tr);});
-    box.append(mk('h3', null, 'Preview – summary'), t);
+    const conf = mk('div', 'en-section'); conf.append(mk('h3', null, 'Remaining tickets as of ' + date(today())), confirmEl(rep),
+      mk('p', 'en-note', 'To confirm: the remaining tickets above match the employer\'s records.'));
+    box.append(conf);
+    for (const b of rep.blocks) {const w = mk('div', 'en-section'); w.append(hrBlockEl(b)); box.append(w);}
+    for (const n of hrNotes(rep)) box.append(mk('p', 'en-note', n));
   }
 
   /* ---------- kostra ---------- */
@@ -404,7 +460,7 @@
   function build() {
     const root = mk('section', 'en-view'); root.id = 'entitlement-view'; root.hidden = true; root.setAttribute('aria-label', 'Flight entitlement');
     const sub = mk('nav', 'en-sub');
-    for (const [k, l] of [['summary', 'Summary'], ['tickets', 'Tickets'], ['rules', 'Rules'], ['export', 'Export']]) {
+    for (const [k, l] of [['summary', 'Summary'], ['tickets', 'Tickets'], ['rules', 'Rules'], ['export', 'HR report']]) {
       const b = mk('button', null, l); b.type = 'button'; b.dataset.sub = k; b.addEventListener('click', () => setSub(k, true)); sub.append(b);
     }
     root.append(sub, mk('div', 'en-msg'), mk('div', 'en-body')); root.querySelector('.en-msg').hidden = true;

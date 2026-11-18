@@ -102,6 +102,47 @@
     return m;
   }
 
+  /* Přehled ve tvaru tabulky zaměstnavatele: po kalendářních letech a po osobách, měsíce odletu,
+     Tickets (k dispozici = přenesený zůstatek + nové dávky roku), Used a Remaining.
+     Dávky jsou za rodinu a dělí se rovným dílem mezi osoby. Nová dávka se přičte v roce svého začátku,
+     dávky začínající v prvním roce nebo dříve už v prvním bloku. Letenky bez měsíce (např. zpětně uplatněné)
+     se počítají do Used a do poznámky. Zrušené a rodinou zaplacené letenky se nepočítají. */
+  function hrReport(people, grants, tickets, today) {
+    const n = people.length || 1, round = x => Math.round(x * 100) / 100;
+    const ids = new Set(people.map(p => p.id));
+    const usage = [];
+    let unassigned = 0;
+    for (const t of tickets) {
+      const cnt = used(t); if (!cnt) continue;
+      if (!ids.has(t.person_id)) {unassigned += cnt; continue;}
+      const y = t.status === 'summary' ? Number(t.year) : Number((t.outbound_date || '').slice(0, 4));
+      if (!y) {unassigned += cnt; continue;}
+      const m = t.outbound_date ? Number(t.outbound_date.slice(5, 7)) - 1 : -1;
+      usage.push({person_id: t.person_id, year: y, month: m, count: cnt});
+    }
+    const thisYear = Number(today.slice(0, 4));
+    const years0 = usage.map(u => u.year);
+    const first = years0.length ? Math.min(...years0) : thisYear;
+    const last = Math.max(thisYear, ...years0);
+    const gy = g => Number(g.valid_from.slice(0, 4));
+    const carry = {}; for (const p of people) carry[p.id] = 0;
+    const blocks = [];
+    for (let y = first; y <= last; y++) {
+      const added = grants.filter(g => y === first ? gy(g) <= y : gy(g) === y).reduce((s, g) => s + Number(g.tickets), 0) / n;
+      const rows = people.map(p => {
+        const months = Array(12).fill(0); let unmonthed = 0, usedY = 0;
+        for (const u of usage) if (u.person_id === p.id && u.year === y) {usedY += u.count; if (u.month >= 0) months[u.month] += u.count; else unmonthed += u.count;}
+        const tickets = round(carry[p.id] + added);
+        const row = {person_id: p.id, name: p.display_name, months, tickets, used: usedY, remaining: round(tickets - usedY), unmonthed};
+        carry[p.id] = row.remaining;
+        return row;
+      });
+      blocks.push({year: y, rows, unmonthed: rows.reduce((s, r) => s + r.unmonthed, 0)});
+    }
+    return {blocks, unassigned, remainingNow: people.map(p => ({person_id: p.id, name: p.display_name, remaining: carry[p.id]})),
+      totalRemaining: round(people.reduce((s, p) => s + carry[p.id], 0))};
+  }
+
   /* Součty srážek ze mzdy (jen letenky z benefitu nad limitem, bez zrušených). */
   function deductions(tickets, rates, limits) {
     let czk = 0, php = 0, n = 0;
@@ -121,7 +162,7 @@
   }
   function toCsv(rows) {return rows.map(r => r.map(csvCell).join(',')).join('\r\n');}
 
-  const api = {rateFor, convert, limitAt, ticketCost, used, pool, pace, companions, usedByYear, deductions, toCsv, csvCell};
+  const api = {rateFor, convert, limitAt, ticketCost, used, pool, pace, hrReport, companions, usedByYear, deductions, toCsv, csvCell};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.EntitlementCalc = api;
 })(typeof window !== 'undefined' ? window : globalThis);
