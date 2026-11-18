@@ -77,7 +77,7 @@ Stejné jako zbytek aplikace: statická stránka (HTML, CSS, vanilla JS) na GitH
 
 **Rozhodnuto**
 - Smlouva je prodloužena do 06/2028, přibývají 2 letenky na osobu (nová dávka s platností do 06/2028). Datum začátku dávky doplní zadavatel.
-- Zobrazovací měny jsou **PHP** (hlavní, filipínská firma a bydliště) a **CZK** (limit ceny, rodina). Originální měna z faktury zůstává vždy uložená.
+- Zobrazovací měny jsou **PHP** (hlavní, měna zaměstnavatele a bydliště) a **CZK** (limit ceny, rodina). Originální měna z faktury zůstává vždy uložená.
 - Zdrojem kurzů: PHP a CZK jsou v denním kurzovním lístku ČNB, doporučeno stahovat při zadání letenky (dohledám a ověřím při stavbě).
 
 **Otevřené**
