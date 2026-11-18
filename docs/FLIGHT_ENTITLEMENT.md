@@ -24,11 +24,11 @@ Záložka a export jsou **anglicky** (názvy, popisky, tlačítka, export). Zbyt
 | Pravidlo | Stav |
 |---|---|
 | Jedna jednotka nároku = **jedna zpáteční letenka pro 1 osobu** | potvrzeno |
-| Nárok má **každá ze 4 osob zvlášť** (zaměstnankyně + 3 závislé osoby), stejný počet pro všechny | z tabulky |
+| Nárok se sleduje jako **jedna společná zásoba rodiny**. Vzniká po 4 osobách, ale kdo letenku čerpal, je jen doplňující údaj | rozhodnuto 18. 11. |
 | Nárok je vázán na **období smlouvy** (od 07/2018). Základní počet vychází zhruba na 2 letenky na osobu a rok smlouvy | z tabulky, ověřit (otázka 1) |
 | Při prodloužení smlouvy se **přidá další dávka** letenek (dodatečný grant). Smlouva je nyní prodloužena do 06/2028, přibývají **2 letenky na osobu** | potvrzeno |
 | Nárok je na zpáteční lety mezi místem bydliště a Českem; zaměstnavatel i bydliště používají měnu PHP | potvrzeno |
-| Nevyčerpaný nárok se přenáší, zůstatek = všechny dávky − čerpáno | z tabulky |
+| Nevyčerpaný nárok se přenáší, zůstatek rodiny = všechny dávky − čerpáno | z tabulky |
 | Část starších letenek se uplatnila **zpětně jednou dávkou** (období covidu), takže pro rané roky existuje jen součet, ne jednotlivé lety | z tabulky |
 | Letět může kdokoli z rodiny kdykoli (i na dovolenou) nebo vůbec; nebo si rodina letenku zaplatí sama | potvrzeno |
 | Limit ceny jedné zpáteční letenky platí do konce roku 2026 (výše je v databázi, ne v repu) | potvrzeno |
@@ -52,10 +52,10 @@ doplatek     = max(0, celková cena − limit platný v den nákupu)
 
 ## 4. Rozsah první verze (MVP)
 
-1. **Summary:** celkem nárok, čerpáno, zbývá. Za celé období i po letech. Barevně: v pořádku / blízko limitu / přečerpáno nebo k ověření.
+1. **Summary:** hlavní číslo je **kolik letenek rodině zbývá**, vedle čerpáno z kolika a kolik je rezervovaných. Tempo do konce smlouvy („kolik letenek ročně, aby nic nepropadlo“). Čerpání po letech. Doplatky ke stržení ze mzdy.
 2. **Tickets:** seznam letenek (jedna řádka = jedna osoba, tam i zpět). Hledání, filtry (osoba, rok, třída, stav, způsob úhrady) a úprava přímo v řádku podle vzoru záložky Lety.
 3. **Cena:** částka v originální měně (podle faktury) plus přepočet do **PHP** (měna zaměstnavatele a místa bydliště) a **CZK** (limit ceny a pohled rodiny). Příplatek za business zvlášť. Kontrola limitu ceny (OK / nad limitem).
-4. **People:** čerpání po osobách. Kdo s kým letěl. Samostatně osoba žijící v Londýně.
+4. **Kdo letěl:** u každé letenky je cestující a vidět, kdo letěl s ním. Nejde o počítání zůstatků po osobách.
 5. **Zdroj úhrady:** čerpáno z benefitu / zaplaceno rodinou samostatně. Doplatek nad limit se **dopočítá**, nevybírá se ručně (viz 3a).
 6. **Export** do CSV a tisknutelného přehledu (anglicky) pro kolegyni.
 7. **Ruční zadání** historie a počátečního stavu přes formulář (žádný import tabulky). Souhrnný záznam pro roky bez detailu.
@@ -70,18 +70,17 @@ Nové tabulky s předponou `travel_`, stejný model přístupu jako u stávajíc
 
 | Tabulka | Účel | Hlavní pole |
 |---|---|---|
-| `travel_entitlement_grants` | Dávky nároku po osobách | `id`, `person_id`, `valid_from`, `valid_to`, `tickets`, `reason` (základní / prodloužení smlouvy / zpětně uplatněno), `source_note` |
+| `travel_entitlement_grants` | Dávky nároku (celkem za rodinu) | `id`, `valid_from`, `valid_to`, `tickets`, `reason` (základní / prodloužení smlouvy / zpětně uplatněno), `source_note` |
 | `travel_entitlement_settings` | Limit ceny letenky v čase | `valid_from`, `valid_to`, `price_cap_amount`, `price_cap_currency` (zatím CZK) |
 | `travel_tickets` | Jedna zpáteční letenka jedné osoby (nebo souhrnný záznam historického čerpání) | `id`, `person_id`, `purchase_date` (z něj se bere kurz a platný limit), `outbound_date`, `return_date`, `from_location_id`, `to_location_id`, `cabin` (economy/business), `payment_source` (benefit/family), `price_amount`, `price_currency`, `business_surcharge_amount`, `status`, `notes`, `trip_id` (nepovinně) |
 | `travel_fx_rates` | Kurzy pro přepočet | `rate_date`, `currency`, `czk_per_unit`, `source` |
-| `travel_entitlement_transfers` | Převod letenek mezi osobami | `id`, `from_person_id`, `to_person_id`, `tickets`, `transfer_date`, `notes` |
 | `travel_ticket_legs` | Vazba letenky na existující lety | `ticket_id`, `leg_id` |
 
 Poznámky:
 
 - Číslo rezervace, čísla dokladů a jiné osobní identifikátory se neukládají.
 - Letenka se **nepočítá** jako dva lety. Samostatné lety ze záložky Lety zůstávají; vazba je volitelná, aby se údaje nezadávaly dvakrát.
-- Zbývající nárok osoby = dávky + přijaté převody − odeslané převody − letenky z benefitu. Počítá se, neukládá se.
+- Zbývající nárok rodiny = součet dávek − letenky z benefitu. Počítá se, neukládá se.
 - Historický součet (čerpáno před evidencí jednotlivých letů) se vede jako zvláštní „souhrnný“ záznam (`status = summary`, počet kusů), aby zůstatek sedil, i když chybí detail. Výpočet bude v samostatném souboru bez práce se stránkou, aby šel testovat.
 - Přepočet: originální částka se nikdy nepřepisuje. Hodnoty v PHP a CZK se dopočítají z uložených kurzů (PHP, CZK, případně EUR a další měny podle faktury).
 
@@ -92,7 +91,7 @@ Stejné jako zbytek aplikace: statická stránka (HTML, CSS, vanilla JS) na GitH
 ## 7. Rozhodnuto
 
 - Smlouva je prodloužena do 06/2028, přibývají 2 letenky na osobu (nová dávka). Datum začátku doplní zadavatel.
-- Nevyužité letenky lze převést mezi osobami. Evidence je po osobách, přehled ukazuje i součet za rodinu. Převod se zapíše jako samostatný záznam (kdo komu, kolik, kdy).
+- Nárok je společná zásoba rodiny, převody mezi osobami se proto neevidují. Osoba je u letenky jen informace o cestujícím.
 - Zobrazovací měny: **PHP** (hlavní) a **CZK** (limit). Originální měna z faktury zůstává uložená.
 - Kurz: denní kurz ČNB, ukládá se při zadání letenky (dostupnost PHP ověřím při stavbě).
 - Limit ceny je měnitelný, platnost od–do (viz 3a). Příplatek za business se do limitu počítá.

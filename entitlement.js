@@ -7,14 +7,14 @@
   const C = window.EntitlementCalc;
   const DEMO = new URLSearchParams(location.search).has('demo') || location.protocol === 'file:';
   if (!C || !window.RodinneCestyFlights || !DEMO) return; // živý režim se zapne až po schválení schématu
-  const S = {people: [], grants: [], limits: [], rates: [], transfers: [], tickets: [], root: null, sub: 'summary', editing: '',
+  const S = {people: [], grants: [], limits: [], rates: [], tickets: [], root: null, sub: 'summary', editing: '',
     filters: {q: '', person: '', year: '', source: '', level: ''}, busy: false};
   const mk = (tag, cls, text) => {const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n;};
   const num = new Intl.NumberFormat('en-US', {maximumFractionDigits: 0});
   const money = (v, cur) => cur + ' ' + num.format(Math.round(v));
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const date = d => d ? (+d.slice(8, 10)) + ' ' + MONTHS[+d.slice(5, 7) - 1] + ' ' + d.slice(0, 4) : '—';
-  const pname = id => (S.people.find(p => p.id === id) || {}).display_name || '?';
+  const pname = id => id ? (S.people.find(p => p.id === id) || {}).display_name || '?' : '';
   const CURRENCIES = ['PHP', 'CZK', 'EUR', 'USD', 'GBP'];
   const airports = () => (typeof AIRPORTS !== 'undefined' ? AIRPORTS : []);
   const uid = () => 'x' + Math.random().toString(36).slice(2, 9);
@@ -23,15 +23,12 @@
   function demoData() {
     const ids = ['a', 'b', 'c', 'd'];
     const people = [['a', 'Alex'], ['b', 'Bára'], ['c', 'Cyril'], ['d', 'Dana']].map(([id, n]) => ({id, display_name: n}));
-    const grants = [];
-    for (const p of ids) {
-      grants.push({id: 'g-' + p + '1', person_id: p, valid_from: '2018-07-01', valid_to: '2025-06-30', tickets: 14, reason: 'Base entitlement', source_note: ''});
-      grants.push({id: 'g-' + p + '2', person_id: p, valid_from: '2025-07-01', valid_to: '2026-06-30', tickets: 2, reason: 'Contract extension', source_note: ''});
-      grants.push({id: 'g-' + p + '3', person_id: p, valid_from: '2026-07-01', valid_to: '2028-06-30', tickets: 2, reason: 'Contract extension', source_note: ''});
-    }
-    const sum = {a: 8, b: 9, c: 6, d: 7};
-    const tickets = ids.map(p => ({id: 's-' + p, person_id: p, status: 'summary', count: sum[p], year: 2023, payment_source: 'benefit',
-      notes: 'Earlier years claimed retroactively in one batch (no per-flight detail)'}));
+    const grants = [
+      {id: 'g1', valid_from: '2018-07-01', valid_to: '2025-06-30', tickets: 56, reason: 'Base entitlement', source_note: '4 people × 14'},
+      {id: 'g2', valid_from: '2025-07-01', valid_to: '2026-06-30', tickets: 8, reason: 'Contract extension', source_note: '4 people × 2'},
+      {id: 'g3', valid_from: '2026-07-01', valid_to: '2028-06-30', tickets: 8, reason: 'Contract extension', source_note: '4 people × 2'}];
+    const tickets = [{id: 's-2023', person_id: '', status: 'summary', count: 30, year: 2023, payment_source: 'benefit',
+      notes: 'Earlier years claimed retroactively in one batch (no per-flight detail)'}];
     const t = (person, out, back, purchase, from, to, cabin, source, price, cur, sur, status, notes) => tickets.push({id: uid(), person_id: person,
       outbound_date: out, return_date: back, purchase_date: purchase, from, to, cabin, payment_source: source, price_amount: price,
       price_currency: cur, business_surcharge_amount: sur || 0, status, notes: notes || ''});
@@ -46,13 +43,12 @@
     const rates = [];
     for (const [d, php, eur, usd, gbp] of [['2023-01-01', 0.40, 24.0, 22.0, 27.5], ['2024-01-01', 0.41, 24.8, 22.8, 28.5], ['2025-01-01', 0.40, 25.0, 23.9, 29.5], ['2026-01-01', 0.39, 24.5, 21.0, 28.0]])
       rates.push({date: d, currency: 'PHP', czk_per_unit: php}, {date: d, currency: 'EUR', czk_per_unit: eur}, {date: d, currency: 'USD', czk_per_unit: usd}, {date: d, currency: 'GBP', czk_per_unit: gbp});
-    return {people, grants, tickets, rates, transfers: [{id: 'x1', from_person_id: 'b', to_person_id: 'a', tickets: 1, transfer_date: '2026-02-01', notes: 'Demo transfer'}],
-      limits: [{id: 'l1', valid_from: '2018-01-01', valid_to: '2026-12-31', amount: 38000, currency: 'CZK'}, {id: 'l2', valid_from: '2027-01-01', valid_to: null, amount: 42000, currency: 'CZK'}]};
+    return {people, grants, tickets, rates, limits: [{id: 'l1', valid_from: '2018-01-01', valid_to: '2026-12-31', amount: 38000, currency: 'CZK'}, {id: 'l2', valid_from: '2027-01-01', valid_to: null, amount: 42000, currency: 'CZK'}]};
   }
 
   /* ---------- pomocné ---------- */
   const cost = t => C.ticketCost(t, S.rates, S.limits);
-  const bal = pid => C.balance(pid, S.grants, S.transfers, S.tickets);
+  const today = () => new Date().toISOString().slice(0, 10);
   const say = (msg, kind) => {const b = S.root.querySelector('.en-msg'); b.textContent = msg || ''; b.hidden = !msg; b.dataset.kind = kind || 'info';};
   const lbl = (text, control, wide) => {const l = mk('label', 'en-field' + (wide ? ' en-wide' : '')); l.append(mk('span', null, text), control); return l;};
   const input = (type, value, extra) => {const i = document.createElement('input'); i.type = type; i.value = value == null ? '' : value; Object.assign(i, extra || {}); return i;};
@@ -63,40 +59,39 @@
 
   /* ---------- Summary ---------- */
   function renderSummary(box) {
-    const ps = S.people.map(p => ({p, b: bal(p.id)}));
-    const tot = ps.reduce((a, x) => ({entitled: a.entitled + x.b.entitled, used: a.used + x.b.used, remaining: a.remaining + x.b.remaining}), {entitled: 0, used: 0, remaining: 0});
+    const P = C.pool(S.grants, S.tickets);
+    const end = S.grants.reduce((m, g) => g.valid_to && g.valid_to > m ? g.valid_to : m, '');
+    const pace = C.pace(P.remaining, end, today());
     const ded = C.deductions(S.tickets, S.rates, S.limits);
     const bad = S.tickets.filter(t => t.status !== 'cancelled' && cost(t).level === 'bad').length;
-    box.append(mk('p', 'en-note', 'One entitlement unit = one return ticket for one person. Entitlement is tracked per person; unused tickets can be transferred between family members (see Rules).'));
+    const level = P.remaining <= 0 ? 'bad' : P.remaining <= 4 ? 'warn' : '';
+    const hero = mk('div', 'en-card en-hero ' + level);
+    const big = mk('div', 'en-big', String(P.remaining)); big.append(mk('small', null, ' return tickets remaining'));
+    const bar = mk('div', 'en-bar'); const fill = document.createElement('i'); fill.style.width = (P.granted ? Math.min(100, Math.max(0, P.used / P.granted * 100)) : 0) + '%'; bar.append(fill);
+    const meta = mk('div', 'en-meta'); meta.append(mk('span', null, 'Used ' + P.used + ' of ' + P.granted + ' granted'));
+    if (P.booked) meta.append(mk('span', null, 'of which ' + P.booked + ' booked, not flown yet'));
+    hero.append(big, bar, meta);
+    if (pace && !pace.ended) hero.append(mk('div', 'en-pace', 'Contract runs until ' + date(end) + ' (' + pace.months + ' months left). To use everything up, that is about ' + (Math.round(pace.perYear * 10) / 10) + ' tickets per year.'));
+    else if (pace && pace.ended) hero.append(mk('div', 'en-pace', 'The last entitlement period ended on ' + date(end) + '. Add a new grant in Rules if the contract was extended.'));
+    box.append(hero);
     const tiles = mk('div', 'en-tiles');
-    const tile = (label, big, cls, small) => {const d = mk('div', 'en-tile ' + (cls || '')); d.append(mk('span', null, label), mk('b', null, big)); if (small) d.append(mk('small', null, small)); tiles.append(d);};
-    tile('Entitled (whole family)', String(tot.entitled));
-    tile('Used', String(tot.used));
-    tile('Remaining', String(tot.remaining), tot.remaining <= 0 ? 'bad' : tot.remaining <= 4 ? 'warn' : 'ok');
+    const tile = (label, bigText, cls, small) => {const d = mk('div', 'en-tile ' + (cls || '')); d.append(mk('span', null, label), mk('b', null, bigText)); if (small) d.append(mk('small', null, small)); tiles.append(d);};
+    tile('Granted in total', String(P.granted), '', S.grants.length + ' grant' + (S.grants.length === 1 ? '' : 's'));
+    tile('Used', String(P.used));
     tile('To deduct from salary', money(ded.php, 'PHP'), ded.count ? 'warn' : 'ok', ded.count ? money(ded.czk, 'CZK') + ' · ' + ded.count + ' ticket' + (ded.count > 1 ? 's' : '') + ' over the limit' : 'No ticket over the limit');
     box.append(tiles);
     if (bad) box.append(mk('div', 'en-msg', bad + ' ticket' + (bad > 1 ? 's' : '') + ' cannot be priced (missing rate, limit or price). Check the Tickets tab.'));
-    const grid = mk('div', 'en-grid');
-    for (const {p, b} of ps) {
-      const level = b.remaining <= 0 ? 'bad' : b.remaining <= 1 ? 'warn' : '';
-      const c = mk('div', 'en-card ' + level);
-      const head = mk('div', 'en-head'); head.append(mk('div', 'en-name', p.display_name));
-      const big = mk('div', 'en-big', String(b.remaining)); big.append(mk('small', null, ' remaining')); head.append(big);
-      const bar = mk('div', 'en-bar'); const fill = document.createElement('i'); fill.style.width = (b.entitled ? Math.min(100, Math.max(0, b.used / b.entitled * 100)) : 0) + '%'; bar.append(fill);
-      const meta = mk('div', 'en-meta');
-      meta.append(mk('span', null, 'Granted ' + b.granted), mk('span', null, 'Received +' + b.received), mk('span', null, 'Sent −' + b.sent), mk('span', null, 'Used ' + b.used));
-      const chips = mk('div', 'en-chips'); const by = C.usedByYear(p.id, S.tickets);
-      for (const y of Object.keys(by).sort()) chips.append(mk('span', 'en-chip', y + ': ' + by[y]));
-      const mine = S.tickets.filter(t => t.person_id === p.id && t.status !== 'summary' && t.status !== 'cancelled');
-      const tally = {}; for (const t of mine) for (const o of C.companions(t, S.tickets)) tally[o] = (tally[o] || 0) + 1;
-      const together = mk('div', 'en-chips');
-      for (const o of Object.keys(tally)) together.append(mk('span', 'en-chip', 'with ' + pname(o) + ' ×' + tally[o]));
-      c.append(head, bar, meta);
-      if (chips.children.length) c.append(mk('div', 'en-note', 'Used by year'), chips);
-      if (together.children.length) c.append(mk('div', 'en-note', 'Flew together'), together);
-      grid.append(c);
+    const by = C.usedByYear(S.tickets), years = Object.keys(by).sort();
+    const sec = mk('div', 'en-section'); sec.append(mk('h3', null, 'Tickets used per year'));
+    const mx = Math.max(1, ...years.map(y => by[y].benefit + by[y].family));
+    for (const y of years) {
+      const row = mk('div', 'en-yrow'); row.append(mk('span', 'en-ylab', y));
+      const track = mk('div', 'en-ytrack');
+      const seg = (n, cls) => {if (!n) return; const i = mk('i', cls, String(n)); i.style.width = (n / mx * 100) + '%'; track.append(i);};
+      seg(by[y].benefit, 'en-seg-b'); seg(by[y].family, 'en-seg-f'); row.append(track); sec.append(row);
     }
-    box.append(grid);
+    sec.append(mk('p', 'en-note', 'Green = from the entitlement, blue = paid by the family (not counted). 2023 includes tickets claimed retroactively for earlier years.'));
+    box.append(sec);
   }
 
   /* ---------- Tickets ---------- */
@@ -108,7 +103,7 @@
       if (f.year && year(t) !== f.year) return false;
       if (f.source && t.payment_source !== f.source) return false;
       if (f.level) {const c = cost(t); if (f.level === 'over' && c.level !== 'over') return false; if (f.level === 'cancelled' && t.status !== 'cancelled') return false;}
-      if (q && ![pname(t.person_id), t.from, t.to, t.notes, t.cabin, t.status].join(' ').toLowerCase().includes(q)) return false;
+      if (q && ![t.person_id ? pname(t.person_id) : '', t.from, t.to, t.notes, t.cabin, t.status].join(' ').toLowerCase().includes(q)) return false;
       return true;
     }).sort((a, b) => (b.outbound_date || String(b.year || '')).localeCompare(a.outbound_date || String(a.year || '')));
   }
@@ -141,7 +136,7 @@
     const cls = cancelled ? 'summary' : c.level === 'over' ? 'warn' : c.level === 'bad' ? 'bad' : c.level === 'family' ? 'family' : c.level === 'summary' ? 'summary' : '';
     const card = mk('div', 'en-card ' + cls);
     const head = mk('div', 'en-head');
-    if (t.status === 'summary') head.append(mk('div', 'en-name', pname(t.person_id) + ' · ' + t.count + ' tickets · ' + t.year + ' (summary)'));
+    if (t.status === 'summary') head.append(mk('div', 'en-name', t.count + ' tickets · ' + t.year + ' (summary)'));
     else head.append(mk('div', 'en-name', pname(t.person_id) + ' · ' + t.from + ' → ' + t.to));
     const badges = mk('div', 'en-chips');
     const badge = (text, k) => badges.append(mk('span', 'en-badge en-b-' + k, text));
@@ -179,8 +174,7 @@
     const form = mk('form', 'en-card'); const fs = mk('div', 'en-form');
     const summary = t.status === 'summary';
     const f = {};
-    f.person = select(personOpts(), t.person_id);
-    fs.append(lbl('Person', f.person));
+    if (!summary) {f.person = select(personOpts(), t.person_id); fs.append(lbl('Traveller', f.person));}
     if (summary) {
       f.count = input('number', t.count, {min: 0, step: 1}); f.year = input('number', t.year, {min: 2018, max: 2100, step: 1});
       fs.append(lbl('Tickets used', f.count), lbl('Year', f.year));
@@ -199,7 +193,7 @@
     }
     f.notes = input('text', t.notes, {maxLength: 200}); fs.append(lbl('Notes', f.notes, true));
     const preview = mk('div', 'en-note en-wide'); fs.append(preview);
-    const read = () => summary ? Object.assign({}, t, {person_id: f.person.value, count: Number(f.count.value), year: Number(f.year.value), notes: f.notes.value.trim()}) :
+    const read = () => summary ? Object.assign({}, t, {count: Number(f.count.value), year: Number(f.year.value), notes: f.notes.value.trim()}) :
       Object.assign({}, t, {person_id: f.person.value, purchase_date: f.purchase.value, outbound_date: f.out.value, return_date: f.back.value,
         from: f.from.value.trim().toUpperCase(), to: f.to.value.trim().toUpperCase(), cabin: f.cabin.value, payment_source: f.source.value, status: f.status.value,
         price_amount: f.price.value === '' ? NaN : Number(f.price.value), price_currency: f.cur.value, business_surcharge_amount: Number(f.sur.value || 0), notes: f.notes.value.trim()});
@@ -241,7 +235,7 @@
     return form;
   }
   function renderRules(box) {
-    box.append(mk('p', 'en-note', 'Rules are editable. The limit and exchange rate used for a ticket are those valid on its purchase date.'));
+    box.append(mk('p', 'en-note', 'Rules are editable. The limit and exchange rate used for a ticket are those valid on its purchase date. The entitlement is one shared pool for the whole family.'));
     // limit
     let sec = mk('div', 'en-section'); sec.append(mk('h3', null, 'Price limit per return ticket'));
     const lt = mk('table', 'en-table'); lt.innerHTML = '<tr><th>Valid from</th><th>Valid to</th><th>Limit</th><th></th></tr>';
@@ -255,29 +249,18 @@
         S.limits.push({id: uid(), valid_from: c.from.value, valid_to: c.to.value || null, amount: Number(c.amt.value), currency: c.cur.value}); return '';}, 'Add limit'));
     box.append(sec);
     // grants
-    sec = mk('div', 'en-section'); sec.append(mk('h3', null, 'Entitlement grants (per person)'));
-    const gt = mk('table', 'en-table'); gt.innerHTML = '<tr><th>Person</th><th>Period</th><th>Tickets</th><th>Reason</th><th></th></tr>';
-    for (const g of S.grants.slice().sort((a, b) => a.person_id.localeCompare(b.person_id) || a.valid_from.localeCompare(b.valid_from))) {
+    sec = mk('div', 'en-section'); sec.append(mk('h3', null, 'Entitlement grants (whole family)'));
+    sec.append(mk('p', 'en-note', 'Enter the total number of return tickets for the family, e.g. 4 people × 2 tickets = 8. Remaining = all grants − tickets used.'));
+    const gt = mk('table', 'en-table'); gt.innerHTML = '<tr><th>Period</th><th>Tickets</th><th>Reason</th><th>Note</th><th></th></tr>';
+    for (const g of S.grants.slice().sort((a, b) => a.valid_from.localeCompare(b.valid_from))) {
       const tr = document.createElement('tr');
-      for (const v of [pname(g.person_id), date(g.valid_from) + ' – ' + date(g.valid_to), g.tickets, g.reason]) tr.append(Object.assign(document.createElement('td'), {textContent: v}));
+      for (const v of [date(g.valid_from) + ' – ' + date(g.valid_to), g.tickets, g.reason, g.source_note || '']) tr.append(Object.assign(document.createElement('td'), {textContent: v}));
       const td = document.createElement('td'); td.append(btn('Delete', 'en-danger', () => {if (confirm('Delete this grant?')) {S.grants.splice(S.grants.indexOf(g), 1); render();}})); tr.append(td); gt.append(tr);
     }
-    sec.append(gt, simpleForm([['p', 'Person', select([['*', 'Everyone'], ...personOpts()], '*')], ['from', 'Valid from', input('date', '')], ['to', 'Valid to', input('date', '')],
-      ['n', 'Tickets', input('number', 2, {min: 1, step: 1})], ['r', 'Reason', select([['Base entitlement', 'Base entitlement'], ['Contract extension', 'Contract extension'], ['Claimed retroactively', 'Claimed retroactively']], 'Contract extension')]],
-      c => {if (!c.from.value || !c.to.value || !(Number(c.n.value) >= 1)) return 'Period and number of tickets are required.';
-        for (const p of (c.p.value === '*' ? S.people.map(x => x.id) : [c.p.value])) S.grants.push({id: uid(), person_id: p, valid_from: c.from.value, valid_to: c.to.value, tickets: Number(c.n.value), reason: c.r.value, source_note: ''}); return '';}, 'Add grant'));
-    box.append(sec);
-    // transfers
-    sec = mk('div', 'en-section'); sec.append(mk('h3', null, 'Transfers between people'));
-    if (!S.transfers.length) sec.append(mk('p', 'en-empty', 'No transfers recorded.'));
-    for (const x of S.transfers) {
-      const row = mk('div', 'en-meta'); row.append(mk('span', null, date(x.transfer_date) + ': ' + x.tickets + ' ticket' + (x.tickets > 1 ? 's' : '') + ' from ' + pname(x.from_person_id) + ' to ' + pname(x.to_person_id) + (x.notes ? ' (' + x.notes + ')' : '')),
-        btn('Delete', 'en-danger', () => {if (confirm('Delete this transfer?')) {S.transfers.splice(S.transfers.indexOf(x), 1); render();}})); sec.append(row);
-    }
-    sec.append(simpleForm([['f', 'From', select(personOpts(), S.people[0].id)], ['t', 'To', select(personOpts(), S.people[1].id)], ['n', 'Tickets', input('number', 1, {min: 1, step: 1})], ['d', 'Date', input('date', '')], ['o', 'Note', input('text', '', {maxLength: 120})]],
-      c => {if (c.f.value === c.t.value) return 'Choose two different people.'; if (!(Number(c.n.value) >= 1) || !c.d.value) return 'Number of tickets and date are required.';
-        if (bal(c.f.value).remaining < Number(c.n.value)) return pname(c.f.value) + ' has only ' + bal(c.f.value).remaining + ' ticket(s) remaining.';
-        S.transfers.push({id: uid(), from_person_id: c.f.value, to_person_id: c.t.value, tickets: Number(c.n.value), transfer_date: c.d.value, notes: c.o.value.trim()}); return '';}, 'Add transfer'));
+    sec.append(gt, simpleForm([['from', 'Valid from', input('date', '')], ['to', 'Valid to', input('date', '')],
+      ['n', 'Tickets (family total)', input('number', 8, {min: 1, step: 1})], ['r', 'Reason', select([['Base entitlement', 'Base entitlement'], ['Contract extension', 'Contract extension'], ['Claimed retroactively', 'Claimed retroactively']], 'Contract extension')], ['o', 'Note', input('text', '', {maxLength: 120})]],
+      c => {if (!c.from.value || !c.to.value || !(Number(c.n.value) >= 1)) return 'Period and number of tickets are required.'; if (c.to.value < c.from.value) return 'Valid to is before valid from.';
+        S.grants.push({id: uid(), valid_from: c.from.value, valid_to: c.to.value, tickets: Number(c.n.value), reason: c.r.value, source_note: c.o.value.trim()}); return '';}, 'Add grant'));
     box.append(sec);
     // rates
     sec = mk('div', 'en-section'); sec.append(mk('h3', null, 'Exchange rates (CZK per 1 unit)'));
@@ -293,14 +276,15 @@
 
   /* ---------- Export ---------- */
   function summaryRows() {
-    const rows = [['Person', 'Entitled', 'Used', 'Remaining', 'Granted', 'Transfers in', 'Transfers out']];
-    for (const p of S.people) {const b = bal(p.id); rows.push([p.display_name, b.entitled, b.used, b.remaining, b.granted, b.received, b.sent]);}
+    const P = C.pool(S.grants, S.tickets), by = C.usedByYear(S.tickets);
+    const rows = [['Item', 'Tickets'], ['Granted in total', P.granted], ['Used', P.used], ['Remaining', P.remaining], ['Booked, not flown yet', P.booked], ['', ''], ['Year', 'Used from entitlement']];
+    for (const y of Object.keys(by).sort()) rows.push([y, by[y].benefit]);
     return rows;
   }
   function ticketRows() {
-    const rows = [['Person', 'Status', 'Outbound', 'Return', 'From', 'To', 'Cabin', 'Paid by', 'Purchase date', 'Price', 'Currency', 'Business surcharge', 'Total CZK', 'Total PHP', 'Limit CZK', 'Deduction CZK', 'Deduction PHP', 'Notes']];
+    const rows = [['Traveller', 'Status', 'Outbound', 'Return', 'From', 'To', 'Cabin', 'Paid by', 'Purchase date', 'Price', 'Currency', 'Business surcharge', 'Total CZK', 'Total PHP', 'Limit CZK', 'Deduction CZK', 'Deduction PHP', 'Notes']];
     for (const t of S.tickets.slice().sort((a, b) => (a.outbound_date || '').localeCompare(b.outbound_date || ''))) {
-      if (t.status === 'summary') {rows.push([pname(t.person_id), 'summary (' + t.year + ')', '', '', '', '', '', SRC[t.payment_source], '', '', '', '', '', '', '', '', '', t.count + ' tickets used; ' + t.notes]); continue;}
+      if (t.status === 'summary') {rows.push(['', 'summary (' + t.year + ')', '', '', '', '', '', SRC[t.payment_source], '', '', '', '', '', '', '', '', '', t.count + ' tickets used; ' + t.notes]); continue;}
       const c = cost(t); const r = x => x == null ? '' : Math.round(x);
       rows.push([pname(t.person_id), t.status, t.outbound_date, t.return_date, t.from, t.to, t.cabin, SRC[t.payment_source], t.purchase_date, t.price_amount, t.price_currency, t.business_surcharge_amount,
         r(c.totalCzk), r(c.totalPhp), r(c.limitCzk), r(c.overCzk), r(c.overPhp), t.notes]);
@@ -316,7 +300,7 @@
     const host = mk('div', 'en-print-host'); host.id = 'en-print';
     const table = rows => {const t = document.createElement('table'); rows.forEach((r, i) => {const tr = document.createElement('tr'); r.forEach(v => tr.append(Object.assign(document.createElement(i ? 'td' : 'th'), {textContent: v == null ? '' : v}))); t.append(tr);}); return t;};
     host.append(mk('h1', null, 'Home leave tickets – entitlement overview'), mk('p', null, 'Generated ' + date(new Date().toISOString().slice(0, 10)) + ' (demo data)'),
-      mk('h2', null, 'Summary by person'), table(summaryRows()), mk('h2', null, 'Tickets'), table(ticketRows()));
+      mk('h2', null, 'Summary'), table(summaryRows()), mk('h2', null, 'Tickets'), table(ticketRows()));
     document.body.append(host); document.body.classList.add('en-printing');
     const done = () => {document.body.classList.remove('en-printing'); host.remove(); window.removeEventListener('afterprint', done);};
     window.addEventListener('afterprint', done); window.print();
@@ -329,7 +313,7 @@
       btn('Print / save as PDF', '', printView));
     box.append(s);
     const t = mk('table', 'en-table'); summaryRows().forEach((r, i) => {const tr = document.createElement('tr'); r.forEach(v => tr.append(Object.assign(document.createElement(i ? 'td' : 'th'), {textContent: v}))); t.append(tr);});
-    box.append(mk('h3', null, 'Preview – summary by person'), t);
+    box.append(mk('h3', null, 'Preview – summary'), t);
   }
 
   /* ---------- kostra ---------- */

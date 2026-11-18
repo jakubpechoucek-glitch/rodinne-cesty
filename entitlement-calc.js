@@ -65,14 +65,21 @@
     return t.status === 'summary' ? Number(t.count || 0) : 1;
   }
 
-  /* Zůstatek osoby: dávky + přijaté převody − odeslané převody − čerpáno. */
-  function balance(personId, grants, transfers, tickets) {
-    const granted = grants.filter(g => g.person_id === personId).reduce((s, g) => s + Number(g.tickets), 0);
-    const received = transfers.filter(x => x.to_person_id === personId).reduce((s, x) => s + Number(x.tickets), 0);
-    const sent = transfers.filter(x => x.from_person_id === personId).reduce((s, x) => s + Number(x.tickets), 0);
-    const u = tickets.filter(t => t.person_id === personId).reduce((s, t) => s + used(t), 0);
-    const entitled = granted + received - sent;
-    return {granted, received, sent, entitled, used: u, remaining: entitled - u};
+  /* Společná zásoba rodiny: součet dávek − čerpáno. Osoba u letenky je jen informace, kdo letěl. */
+  function pool(grants, tickets) {
+    const granted = grants.reduce((s, g) => s + Number(g.tickets), 0);
+    const u = tickets.reduce((s, t) => s + used(t), 0);
+    const booked = tickets.filter(t => t.status === 'booked' && used(t) > 0).length;
+    return {granted, used: u, remaining: granted - u, booked};
+  }
+
+  /* Tempo do konce smlouvy: kolik letenek zbývá na rok, aby se do konce smlouvy vyčerpaly.
+     endDate = nejpozdější konec dávky, today = 'YYYY-MM-DD'. */
+  function pace(remaining, endDate, today) {
+    if (!endDate) return null;
+    const months = (Number(endDate.slice(0, 4)) - Number(today.slice(0, 4))) * 12 + (Number(endDate.slice(5, 7)) - Number(today.slice(5, 7))) + 1;
+    if (months <= 0) return {months: 0, perYear: null, ended: true};
+    return {months, perYear: remaining / (months / 12), ended: false};
   }
 
   /* Kdo s kým letěl: ostatní osoby se stejnou trasou a stejným datem odletu (jen běžné letenky). */
@@ -82,14 +89,15 @@
       o.from === t.from && o.to === t.to && o.outbound_date === t.outbound_date).map(o => o.person_id);
   }
 
-  /* Čerpání po kalendářních letech podle data odletu (souhrnné záznamy mají vlastní rok `year`). */
-  function usedByYear(personId, tickets) {
+  /* Čerpání po kalendářních letech podle data odletu (souhrnné záznamy mají vlastní rok `year`).
+     Vrací {rok: {benefit: n, family: m}}; z benefitu se počítají jen platné letenky, rodinné platby zvlášť. */
+  function usedByYear(tickets) {
     const m = {};
     for (const t of tickets) {
-      if (t.person_id !== personId) continue;
-      const n = used(t); if (!n) continue;
-      const y = t.status === 'summary' ? String(t.year || '') : (t.outbound_date || '').slice(0, 4);
-      m[y || 'unknown'] = (m[y || 'unknown'] || 0) + n;
+      if (t.status === 'cancelled' || t.status === 'summary' && t.payment_source !== 'benefit') continue;
+      const y = (t.status === 'summary' ? String(t.year || '') : (t.outbound_date || '').slice(0, 4)) || 'unknown';
+      const e = m[y] || (m[y] = {benefit: 0, family: 0});
+      if (t.payment_source === 'benefit') e.benefit += used(t); else e.family += 1;
     }
     return m;
   }
@@ -113,7 +121,7 @@
   }
   function toCsv(rows) {return rows.map(r => r.map(csvCell).join(',')).join('\r\n');}
 
-  const api = {rateFor, convert, limitAt, ticketCost, used, balance, companions, usedByYear, deductions, toCsv, csvCell};
+  const api = {rateFor, convert, limitAt, ticketCost, used, pool, pace, companions, usedByYear, deductions, toCsv, csvCell};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.EntitlementCalc = api;
 })(typeof window !== 'undefined' ? window : globalThis);

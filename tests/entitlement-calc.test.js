@@ -42,19 +42,21 @@ assert.equal(c.level,'bad'); assert.match(c.problems[0],/exchange rate/);
 c = C.ticketCost({purchase_date:'2010-03-01',price_amount:10,price_currency:'CZK',payment_source:'benefit'},rates,limits);
 assert.equal(c.level,'bad'); assert.match(c.problems[0],/limit/);
 
-// zůstatek: dávky + přijaté − odeslané − čerpáno; souhrn a zrušené
-const grants=[{person_id:'a',tickets:14},{person_id:'a',tickets:2},{person_id:'b',tickets:14}];
-const transfers=[{from_person_id:'b',to_person_id:'a',tickets:1}];
+// společná zásoba rodiny: dávky − čerpáno; souhrn, zrušené a rodinné platby se nepočítají
+const grants=[{tickets:56},{tickets:8}];
 const tickets=[
- {id:'1',person_id:'a',status:'summary',count:9,payment_source:'benefit',year:2023},
+ {id:'1',person_id:'a',status:'summary',count:30,payment_source:'benefit',year:2023},
  {id:'2',person_id:'a',status:'flown',payment_source:'benefit',from:'MNL',to:'PRG',outbound_date:'2026-03-02'},
  {id:'3',person_id:'b',status:'flown',payment_source:'benefit',from:'MNL',to:'PRG',outbound_date:'2026-03-02'},
  {id:'4',person_id:'b',status:'cancelled',payment_source:'benefit',from:'MNL',to:'PRG',outbound_date:'2026-05-02'},
- {id:'5',person_id:'b',status:'flown',payment_source:'family',from:'MNL',to:'PRG',outbound_date:'2026-07-02'}];
-assert.deepEqual(C.balance('a',grants,transfers,tickets),{granted:16,received:1,sent:0,entitled:17,used:10,remaining:7});
-assert.deepEqual(C.balance('b',grants,transfers,tickets),{granted:14,received:0,sent:1,entitled:13,used:1,remaining:12});
+ {id:'5',person_id:'b',status:'flown',payment_source:'family',from:'MNL',to:'PRG',outbound_date:'2026-07-02'},
+ {id:'6',person_id:'c',status:'booked',payment_source:'benefit',from:'LHR',to:'PRG',outbound_date:'2026-12-02'}];
+assert.deepEqual(C.pool(grants,tickets),{granted:64,used:33,remaining:31,booked:1});
 assert.deepEqual(C.companions(tickets[1],tickets),['b']);
-assert.deepEqual(C.usedByYear('a',tickets),{'2023':9,'2026':1});
+assert.deepEqual(C.usedByYear(tickets),{'2023':{benefit:30,family:0},'2026':{benefit:3,family:1}});
+// tempo: 24 měsíců do konce smlouvy a 12 letenek = 6 ročně; po konci smlouvy nic
+assert.equal(C.pace(12,'2028-06-30','2026-07-15').months,24); assert.equal(C.pace(12,'2028-06-30','2026-07-15').perYear,6);
+assert.equal(C.pace(5,'2025-06-30','2026-07-15').ended,true); assert.equal(C.pace(5,null,'2026-07-15'),null);
 
 // souhrn srážek
 const d=C.deductions([{purchase_date:'2026-03-01',price_amount:70000,business_surcharge_amount:45000,price_currency:'PHP',payment_source:'benefit'}],rates,limits);
