@@ -107,7 +107,7 @@ Stejné jako zbytek aplikace: statická stránka (HTML, CSS, vanilla JS) na GitH
 ## 8. Postup
 
 1. Návrh obrazovek v režimu `?demo` se smyšlenými daty (Summary, Tickets, People, Export), mobil a desktop.
-2. Po schválení migrace `travel_*` tabulek (grants, tickets, settings, fx_rates, transfers) s RLS a test, že nečlen rodiny nevidí nic.
+2. Po schválení migrace `travel_*` tabulek (grants, tickets, settings, fx_rates) s RLS a test, že nečlen rodiny nevidí nic.
 3. Ruční zadání skutečných dat zadavatelem přes formulář v přihlášeném režimu, nic z toho do gitu.
 4. Dokumentace projektů na Rozcestníku a ověření odkazu zpět do Rozcestníku.
 
