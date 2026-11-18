@@ -26,7 +26,10 @@ Aktualizováno: 15. listopadu 2026. Aktuální vývojová větev: `vyvoj/editor-
 - [x] Přehrávání časové osy zpomalí v měsíci s letem: let trvá 3 s (při 2× a 4× úměrně kratší), několik letů v měsíci letí postupně a po posledním se 1 s počká.
 
 ## Plánováno
-- [ ] Záložka „Flight entitlement“ (anglicky): sledování firemního nároku na letenky. Zadání a otevřené otázky v `docs/FLIGHT_ENTITLEMENT.md`; čeká na odpovědi zadavatele.
+- [x] Záložka „Flight entitlement“ (anglicky), **jen demo** (`?demo#entitlement`): Summary, Tickets, Rules, Export (CSV + tisk). Výpočty v `entitlement-calc.js` s testy (`node tests/entitlement-calc.test.js`). Zadání v `docs/FLIGHT_ENTITLEMENT.md`.
+- [ ] Flight entitlement: schválit demo, pak migrace `travel_*` tabulek (dávky, letenky, limity, kurzy, převody) s RLS a napojení živého režimu.
+- [ ] Flight entitlement: ověřit, že ČNB zveřejňuje kurz PHP, a navrhnout stahování kurzů.
+- [ ] Flight entitlement: karta v Dokumentaci projektů na Rozcestníku.
 
 ## Zbývá před nasazením
 - [ ] Otestovat živý režim ve skutečném přihlášeném prohlížeči a RLS zápisy.

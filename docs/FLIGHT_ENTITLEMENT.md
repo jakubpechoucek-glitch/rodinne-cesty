@@ -72,7 +72,7 @@ Nové tabulky s předponou `travel_`, stejný model přístupu jako u stávajíc
 |---|---|---|
 | `travel_entitlement_grants` | Dávky nároku po osobách | `id`, `person_id`, `valid_from`, `valid_to`, `tickets`, `reason` (základní / prodloužení smlouvy / zpětně uplatněno), `source_note` |
 | `travel_entitlement_settings` | Limit ceny letenky v čase | `valid_from`, `valid_to`, `price_cap_amount`, `price_cap_currency` (zatím CZK) |
-| `travel_tickets` | Jedna zpáteční letenka jedné osoby (nebo souhrnný záznam historického čerpání) | `id`, `person_id`, `outbound_date`, `return_date`, `from_location_id`, `to_location_id`, `cabin` (economy/business), `payment_source` (benefit/family), `price_amount`, `price_currency`, `business_surcharge_amount`, `status`, `notes`, `trip_id` (nepovinně) |
+| `travel_tickets` | Jedna zpáteční letenka jedné osoby (nebo souhrnný záznam historického čerpání) | `id`, `person_id`, `purchase_date` (z něj se bere kurz a platný limit), `outbound_date`, `return_date`, `from_location_id`, `to_location_id`, `cabin` (economy/business), `payment_source` (benefit/family), `price_amount`, `price_currency`, `business_surcharge_amount`, `status`, `notes`, `trip_id` (nepovinně) |
 | `travel_fx_rates` | Kurzy pro přepočet | `rate_date`, `currency`, `czk_per_unit`, `source` |
 | `travel_entitlement_transfers` | Převod letenek mezi osobami | `id`, `from_person_id`, `to_person_id`, `tickets`, `transfer_date`, `notes` |
 | `travel_ticket_legs` | Vazba letenky na existující lety | `ticket_id`, `leg_id` |
