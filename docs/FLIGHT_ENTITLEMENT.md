@@ -1,6 +1,6 @@
 # Flight entitlement — zadání a datový model
 
-**Verze:** 1.0 (rozhodnutí zadavatele zapracována, ke schválení před stavbou)
+**Verze:** 1.1 (schéma nasazeno, živý režim napojen)
 **Datum:** 18. 11. 2026
 **Navazuje na:** `docs/PROJECT.md` (Rodinné cesty), záložka Lety (`flights.js`)
 
@@ -93,7 +93,7 @@ Stejné jako zbytek aplikace: statická stránka (HTML, CSS, vanilla JS) na GitH
 - Smlouva je prodloužena do 06/2028, přibývají 2 letenky na osobu (nová dávka). Datum začátku doplní zadavatel.
 - Nárok je společná zásoba rodiny, převody mezi osobami se proto neevidují. Osoba je u letenky jen informace o cestujícím.
 - Zobrazovací měny: **PHP** (hlavní) a **CZK** (limit). Originální měna z faktury zůstává uložená.
-- Kurz: denní kurz ČNB, ukládá se při zadání letenky (dostupnost PHP ověřím při stavbě).
+- Kurz: denní kurz ČNB (PHP, EUR, USD, GBP ověřeně dostupné) se při uložení letenky načte stávající databázovou funkcí `fin_kurzy_cnb` a uloží do `travel_fx_rates`; lze zadat i ručně.
 - Limit ceny je měnitelný, platnost od–do (viz 3a). Příplatek za business se do limitu počítá.
 - Lety z Londýna se do benefitu počítají.
 - Počáteční stav a lety doplní zadavatel ručně z dostupných záznamů (ne importem tabulky). Souhrnný záznam historického čerpání zůstane pro roky bez detailu.

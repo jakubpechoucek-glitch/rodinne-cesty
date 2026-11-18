@@ -27,8 +27,9 @@ Aktualizováno: 15. listopadu 2026. Aktuální vývojová větev: `vyvoj/editor-
 
 ## Plánováno
 - [x] Záložka „Flight entitlement“ (anglicky), **jen demo** (`?demo#entitlement`): Summary (zbývá celé rodině), Tickets, Rules, Export (CSV + tisk); nárok je společná zásoba, ne po osobách. Výpočty v `entitlement-calc.js` s testy (`node tests/entitlement-calc.test.js`). Zadání v `docs/FLIGHT_ENTITLEMENT.md`.
-- [ ] Flight entitlement: schválit demo, pak migrace `travel_*` tabulek (dávky, letenky, limity, kurzy, převody) s RLS a napojení živého režimu.
-- [ ] Flight entitlement: ověřit, že ČNB zveřejňuje kurz PHP, a navrhnout stahování kurzů.
+- [x] Flight entitlement: migrace `flight_entitlement_schema_v1` aplikována (4 tabulky: `travel_entitlement_grants`, `travel_entitlement_limits`, `travel_fx_rates`, `travel_tickets`). RLS jen pro členy rodiny (`je_clen()`), `anon` nemá práva. Ověřeno v databázi: omezující pravidla odmítají neúplná data, nečlen rodiny vidí 0 řádků a nic nezapíše, `anon` je odmítnut.
+- [x] Flight entitlement: živý režim napojen na Supabase (čtení, přidání, úprava, smazání). Kurz ČNB (PHP, EUR, USD, GBP) se při uložení letenky načte stávající funkcí `fin_kurzy_cnb` a uloží; jde zadat i ručně. Otestováno v prohlížeči s napodobeným klientem databáze; **zbývá ověřit v přihlášeném prohlížeči s opravdovou databází (mobil i desktop).**
+- [ ] Flight entitlement: zadat skutečné dávky, limit a letenky (ručně přes formulář; nic z toho do gitu).
 - [ ] Flight entitlement: karta v Dokumentaci projektů na Rozcestníku.
 
 ## Zbývá před nasazením
