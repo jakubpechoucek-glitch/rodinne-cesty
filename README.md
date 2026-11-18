@@ -17,7 +17,7 @@ Základní verze je v `main` a publikuje se přes GitHub Pages. V pracovní vět
 - Země se zvýrazní jen u ověřené skutečné návštěvy. Není-li poloha doložená, aplikace nevymýšlí trasu.
 
 ## Flight entitlement
-Záložka (anglicky) pro sledování firemního nároku na letenky: zbývající počet pro rodinu, ceny v originální měně s přepočtem do PHP a CZK (kurz ČNB), doplatek nad limit ceny a export pro kolegyni. Čtyři tabulky v Supabase (`sql/02_flight_entitlement.sql`), výpočty v `entitlement-calc.js` (testy: `node tests/entitlement-calc.test.js`). Zadání: `docs/FLIGHT_ENTITLEMENT.md`.
+Záložka (anglicky) pro sledování firemního nároku na letenky: zbývající počet pro rodinu, ceny v originální měně s přepočtem do PHP a CZK (kurz ČNB), doplatek nad limit ceny a záložku **HR report** ve tvaru tabulky zaměstnavatele (po letech a osobách) k potvrzení zbývajících letenek. Čtyři tabulky v Supabase (`sql/02_flight_entitlement.sql`), výpočty v `entitlement-calc.js` (testy: `node tests/entitlement-calc.test.js`). Zadání: `docs/FLIGHT_ENTITLEMENT.md`.
 
 ## Bezpečnost
 Repozitář je veřejný. Skutečná data cest, fotografie pasů a přístupové tokeny sem nepatří. Data chrání Supabase RLS; anonymní role nemá přístup ke `travel_*` tabulkám. Fotky pasů zatím vůbec nepřijímáme.
